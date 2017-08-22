@@ -58,7 +58,8 @@
 #define SD_EVENT_RSP2_IN    0x00000100
 #define SD_EVENT_CLK_KEEP0  0x00001000
 #define SD_EVENT_CLK_KEEP1  0x00010000
-
+static int nuc970_sd_card_detect(struct mmc_host *mmc);
+static DEFINE_MUTEX(sw_host_rescan_mutex);
 static volatile int sd_event=0, sd_state=0, sd_state_xfer=0, sd_ri_timeout=0, sd_send_cmd=0;
 static DECLARE_WAIT_QUEUE_HEAD(sd_event_wq);
 static DECLARE_WAIT_QUEUE_HEAD(sd_wq);
@@ -125,7 +126,31 @@ static void dump_sdh_regs()
     printk("    REG_SDECR   = 0x%x\n", nuc970_sd_read(REG_SDECR));
 }
 #endif
+void nuc970_rescan_card(unsigned id, unsigned insert)
+{
+	struct nuc970_sd_host *smc_host = NULL;
+	if (id > 3) {
+		pr_err("%s: card id more than 3.\n", __func__);
+		return;
+	}
+	 printk("nuc970_rescan_card\r\n");
+	mutex_lock(&sw_host_rescan_mutex);
+	if(id==0)
+	{
+		smc_host = sd_host;
+	
+	}
+	mutex_unlock(&sw_host_rescan_mutex);
 
+	if (smc_host==NULL)
+		return;
+	 printk("nuc970_sd_card_detect111 mmc_detect_change\r\n");
+	//nuc970_sd_card_detect(smc_host->mmc);
+	smc_host->present = insert ? 1 : 0;
+	mmc_detect_change(smc_host->mmc, msecs_to_jiffies(500));
+	
+}
+EXPORT_SYMBOL_GPL(nuc970_rescan_card);
 /*
  * Reset the controller and restore most of the state
  */
@@ -941,8 +966,8 @@ static int nuc970_sd_probe(struct platform_device *pdev)
     }
 
     mmc->ops = &nuc970_sd_ops;
-    mmc->f_min = 400000;
-    mmc->f_max = 50000000;
+    mmc->f_min = 300000;
+    mmc->f_max = 25000000;
     mmc->ocr_avail = MMC_VDD_27_28|MMC_VDD_28_29|MMC_VDD_29_30|MMC_VDD_30_31|MMC_VDD_31_32|MMC_VDD_32_33 | MMC_VDD_33_34;
     mmc->caps = 0;
     mmc->max_blk_size  = MCI_MAXBLKSIZE;
