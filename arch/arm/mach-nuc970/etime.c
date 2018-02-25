@@ -1,8 +1,8 @@
 /*
- * linux/arch/arm/mach-nuc970/time.c
+ * linux/arch/arm/mach-nuc970/etime.c
  *
  *
- * Copyright (c) 2014 Nuvoton technology corporation
+ * Copyright (c) 2017 Nuvoton technology corporation
  * All rights reserved.
  *
  *
@@ -49,12 +49,13 @@
 #include <mach/hardware.h>
 #include <mach/regs-clock.h>
 #include <mach/regs-aic.h>
+#include <mach/regs-etimer.h>
 
 #define RESETINT	0x1f
-#define PERIOD		(0x01 << 27)
-#define ONESHOT		(0x00 << 27)
-#define COUNTEN		(0x01 << 30)
-#define INTEN		(0x01 << 29)
+#define PERIOD		(0x01 << 4)
+#define ONESHOT		(0x00 << 4)
+#define COUNTEN		(0x01)
+#define INTEN		(0x01)
 
 #define TICKS_PER_SEC	100
 #define PRESCALE	0x63 /* Divider = prescale + 1 */
@@ -62,24 +63,26 @@
 #define	TDR_SHIFT	24
 #define	TDR_MASK	((1 << TDR_SHIFT) - 1)
 
-static unsigned int timer0_load;
+static unsigned int etimer0_load;
 
 static void nuc970_clockevent_setmode(enum clock_event_mode mode,
 		struct clock_event_device *clk)
 {
 	unsigned int val;
 
-	val = __raw_readl(REG_TMR_TCSR0);
-	val &= ~(0x03 << 27);
+	__raw_writel(INTEN, REG_ETMR_IER(0));
+	__raw_writel(PRESCALE, REG_ETMR_PRECNT(0));
+	val = __raw_readl(REG_ETMR_CTL(0));
+	val &= ~(0x03 << 4);
 
 	switch (mode) {
 	case CLOCK_EVT_MODE_PERIODIC:
-		__raw_writel(timer0_load, REG_TMR_TICR0);
-		val |= (PERIOD | COUNTEN | INTEN | PRESCALE);
+		__raw_writel(etimer0_load, REG_ETMR_CMPR(0));
+		val |= (PERIOD | COUNTEN);
 		break;
 
 	case CLOCK_EVT_MODE_ONESHOT:
-		val |= (ONESHOT | COUNTEN | INTEN | PRESCALE);
+		val |= (ONESHOT | COUNTEN);
 		break;
 
 	case CLOCK_EVT_MODE_UNUSED:
@@ -88,35 +91,31 @@ static void nuc970_clockevent_setmode(enum clock_event_mode mode,
 		break;
 	}
 
-	__raw_writel(val, REG_TMR_TCSR0);
+	__raw_writel(val, REG_ETMR_CTL(0));
 }
 
 static int nuc970_clockevent_setnextevent(unsigned long evt,
 		struct clock_event_device *clk)
 {
-	unsigned int tcsr, tdelta;
+	if(evt < 2)
+		evt = 2;
+	__raw_writel(evt, REG_ETMR_CMPR(0)); /* CMPR must greater or equal to 2 */
+	__raw_writel(__raw_readl(REG_ETMR_CTL(0)) | COUNTEN, REG_ETMR_CTL(0));
 
-    tcsr = __raw_readl(REG_TMR_TCSR0);
-    tdelta = __raw_readl(REG_TMR_TICR0) - __raw_readl(REG_TMR_TDR0);
-
-	__raw_writel(evt, REG_TMR_TICR0);
-    if(!(tcsr & COUNTEN) && ((tdelta > 2) || (tdelta == 0)))
-        __raw_writel(__raw_readl(REG_TMR_TCSR0) | COUNTEN, REG_TMR_TCSR0);
-
-	return 0;
+ 	return 0;
 }
 #ifdef CONFIG_PM
-static int tmr0_msk;
+static int etmr0_msk;
 static void nuc970_clockevent_suspend(struct clock_event_device *clk)
 {
 	unsigned long flags;
 
 	local_irq_save(flags);
-	if(__raw_readl(REG_AIC_IMR) & (1 << 16)) {
-		tmr0_msk = 1;
-		__raw_writel(0x10000, REG_AIC_MDCR);  //timer0
+	if(__raw_readl(REG_AIC_IMRH) & (1 << 15)) {
+		etmr0_msk = 1;
+		__raw_writel(0x8000, REG_AIC_MDCRH);  //etimer0
 	} else
-		tmr0_msk = 0;
+		etmr0_msk = 0;
 
 	local_irq_restore(flags);
 
@@ -128,15 +127,15 @@ static void nuc970_clockevent_resume(struct clock_event_device *clk)
 	unsigned long flags;
 
 	local_irq_save(flags);
-	if(tmr0_msk == 1)
-		__raw_writel(0x10000, REG_AIC_MECR);  //timer0
+	if(etmr0_msk == 1)
+		__raw_writel(0x8000, REG_AIC_MECRH);  //etimer0
 	local_irq_restore(flags);
 
 	printk("clk event resume\n");
 }
 #endif
 static struct clock_event_device nuc970_clockevent_device = {
-	.name		= "nuc970-timer0",
+	.name		= "nuc970-etimer0",
 	.shift		= 32,
 	.features	= CLOCK_EVT_FEAT_PERIODIC | CLOCK_EVT_FEAT_ONESHOT,
 	.set_mode	= nuc970_clockevent_setmode,
@@ -150,40 +149,43 @@ static struct clock_event_device nuc970_clockevent_device = {
 
 /*IRQ handler for the timer*/
 
-static irqreturn_t nuc970_timer0_interrupt(int irq, void *dev_id)
+static irqreturn_t nuc970_etimer0_interrupt(int irq, void *dev_id)
 {
 	struct clock_event_device *evt = &nuc970_clockevent_device;
 
-	__raw_writel(0x01, REG_TMR_TISR); /* clear TIF0 */
+	__raw_writel(0x01, REG_ETMR_ISR(0)); /* clear TIF0 */
 	evt->event_handler(evt);
 
 	return IRQ_HANDLED;
 }
 
-static struct irqaction nuc970_timer0_irq = {
-	.name		= "nuc970-timer0",
+static struct irqaction nuc970_etimer0_irq = {
+	.name		= "nuc970-etimer0",
 	.flags		= IRQF_DISABLED | IRQF_TIMER | IRQF_IRQPOLL,
-	.handler	= nuc970_timer0_interrupt,
+	.handler	= nuc970_etimer0_interrupt,
 };
 
 static void __init nuc970_clockevents_init(void)
 {
 	unsigned int rate;
-	struct clk *clk = clk_get(NULL, "timer0");
+	struct clk *clk = clk_get(NULL, "etimer0");
+	struct clk *eclk = clk_get(NULL, "etmr0_eclk");
 
 	BUG_ON(IS_ERR(clk));
+	BUG_ON(IS_ERR(eclk));
 
 	clk_prepare(clk);
 	clk_enable(clk);
+	clk_prepare(eclk);
+	clk_enable(eclk);
+	__raw_writel(0x00, REG_ETMR_CTL(0));
 
-	__raw_writel(0x00, REG_TMR_TCSR0);
+	rate = clk_get_rate(eclk) / (PRESCALE + 1);
 
-	rate = clk_get_rate(clk) / (PRESCALE + 1);
+	etimer0_load = (rate / TICKS_PER_SEC);
 
-	timer0_load = (rate / TICKS_PER_SEC) - 1;
-
-	__raw_writel(RESETINT, REG_TMR_TISR);
-	setup_irq(IRQ_TMR0, &nuc970_timer0_irq);
+	__raw_writel(RESETINT, REG_ETMR_ISR(0));
+	setup_irq(IRQ_ETIMER0, &nuc970_etimer0_irq);
 
 	nuc970_clockevent_device.mult = div_sc(rate, NSEC_PER_SEC,
 					nuc970_clockevent_device.shift);
@@ -198,20 +200,20 @@ static void __init nuc970_clockevents_init(void)
 
 static cycle_t nuc970_get_cycles(struct clocksource *cs)
 {
-	return (__raw_readl(REG_TMR_TDR1)) & TDR_MASK;
+	return (__raw_readl(REG_ETMR_DR(1))) & TDR_MASK;
 }
 #ifdef CONFIG_PM
-static int tmr1_msk;
+static int etmr1_msk;
 static void nuc970_clocksource_suspend(struct clocksource *cs)
 {
 	unsigned long flags;
 
 	local_irq_save(flags);
-	if(__raw_readl(REG_AIC_IMR) & (1 << 17)) {
-		tmr1_msk = 1;
-		__raw_writel(0x20000, REG_AIC_MDCR);  //timer1
+	if(__raw_readl(REG_AIC_IMRH) & (1 << 16)) {
+		etmr1_msk = 1;
+		__raw_writel(0x10000, REG_AIC_MDCRH);  //timer1
 	} else
-		tmr1_msk = 0;
+		etmr1_msk = 0;
 
 	local_irq_restore(flags);
 
@@ -224,8 +226,8 @@ static void nuc970_clocksource_resume(struct clocksource *cs)
 
 
 	local_irq_save(flags);
-	if(tmr1_msk == 1)
-		__raw_writel(0x20000, REG_AIC_MECR);  //timer1
+	if(etmr1_msk == 1)
+		__raw_writel(0x10000, REG_AIC_MECRH);  //timer1
 	local_irq_restore(flags);
 
 	printk("clk source resume\n");
@@ -248,23 +250,28 @@ static void __init nuc970_clocksource_init(void)
 {
 	unsigned int val;
 	unsigned int rate = 0;
-	struct clk *clk = clk_get(NULL, "timer1");
+
+	struct clk *clk = clk_get(NULL, "etimer1");
+	struct clk *eclk = clk_get(NULL, "etmr1_eclk");
 
 	BUG_ON(IS_ERR(clk));
+	BUG_ON(IS_ERR(eclk));
 
 	clk_prepare(clk);
 	clk_enable(clk);
+	clk_prepare(eclk);
+	clk_enable(eclk);
 
-	__raw_writel(0x00, REG_TMR_TCSR1);
+	__raw_writel(0x00, REG_ETMR_CTL(1));
 
 
-	rate = clk_get_rate(clk) / (PRESCALE + 1);
+	rate = clk_get_rate(eclk) / (PRESCALE + 1);
 
-	__raw_writel(0xffffffff, REG_TMR_TICR1);
-
-	val = __raw_readl(REG_TMR_TCSR1);
-	val |= (COUNTEN | PERIOD | PRESCALE);
-	__raw_writel(val, REG_TMR_TCSR1);
+	__raw_writel(0xffffffff, REG_ETMR_CMPR(1));
+	__raw_writel(PRESCALE, REG_ETMR_PRECNT(1));
+	val = __raw_readl(REG_ETMR_CTL(1));
+	val |= (COUNTEN | PERIOD);
+	__raw_writel(val, REG_ETMR_CTL(1));
 
 	clocksource_nuc970.mult =
 		clocksource_khz2mult((rate / 1000), clocksource_nuc970.shift);
