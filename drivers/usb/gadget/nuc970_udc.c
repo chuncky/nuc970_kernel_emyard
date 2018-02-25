@@ -86,9 +86,9 @@ static void nuke (struct nuc970_udc *udc, struct nuc970_ep *ep)
 		req = list_entry (ep->queue.next, struct nuc970_request, queue);
 		list_del_init (&req->queue);
 		req->req.status = -ESHUTDOWN;
-		spin_unlock (&udc->lock);
+		//spin_unlock (&udc->lock);
 		req->req.complete (&ep->ep, &req->req);
-		spin_lock (&udc->lock);
+		//spin_lock (&udc->lock);
 	}
 }
 
@@ -194,8 +194,9 @@ write_packet(struct nuc970_ep *ep, struct nuc970_request *req)
 	u32 data, i;
 	u32 max;
 
+	__raw_writel(0x1000, controller.reg + REG_USBD_CEP_IRQ_STAT);
 	buf = req->req.buf + req->req.actual;
-	prefetch(buf);
+//	prefetch(buf);
 //	if (udc->gadget.speed == USB_SPEED_FULL)
 //		udelay(500);
 
@@ -211,7 +212,14 @@ write_packet(struct nuc970_ep *ep, struct nuc970_request *req)
 		}
 		else
 		{
-			while ((__raw_readl(controller.reg + REG_USBD_CEP_IRQ_STAT) & 0x1000) != 0x1000);
+			while ((__raw_readl(controller.reg + REG_USBD_CEP_IRQ_STAT) & 0x1000) != 0x1000)
+			{
+				if (!(__raw_readl(controller.reg + REG_USBD_PHY_CTL) & 0x80000000))
+				{
+					printk("unplug!\n");
+					return 0;
+				}
+			}
 			tmp = len / 4;
 			for (i=0; i<tmp; i++)
 			{
@@ -410,12 +418,15 @@ void paser_irq_stat(int irq, struct nuc970_udc *dev)
 			if (__raw_readl(controller.reg + REG_USBD_PHY_CTL) & 0x80000000)
 			{
 				printk("plug in\n");
+				__raw_writel(__raw_readl(controller.reg + REG_USBD_CEP_CTRL_STAT)|CEP_FLUSH,
+							 controller.reg + REG_USBD_CEP_CTRL_STAT);
 				nuc970_udc_enable(dev);
 			}
 			else
 			{
 				printk("plug out\n");
 				nuc970_udc_disable(dev);
+				nuke(dev, &dev->ep[0]);
 			}
 			break;
 
@@ -549,11 +560,25 @@ void paser_irq_nep(int irq, struct nuc970_ep *ep, u32 IrqSt)
 				break;
 			}
 
-			while (__raw_readl(controller.reg + REG_USBD_DMA_CTRL_STS)&0x20);//wait DMA complete
+			while (__raw_readl(controller.reg + REG_USBD_DMA_CTRL_STS)&0x20) //wait DMA complete
+			{
+				if (!(__raw_readl(controller.reg + REG_USBD_PHY_CTL) & 0x80000000))
+				{
+					printk("unplug!\n");
+					break;
+				}
+			}
 			if (dev->usb_dma_trigger)
 			{
 				pr_devel("IN dma triggered\n");
-				while ((__raw_readl(controller.reg + REG_USBD_IRQ_STAT) & 0x20) == 0);
+				while ((__raw_readl(controller.reg + REG_USBD_IRQ_STAT) & 0x20) == 0)
+				{
+					if (!(__raw_readl(controller.reg + REG_USBD_PHY_CTL) & 0x80000000))
+					{
+						printk("unplug!\n");
+						break;
+					}
+				}
 				__raw_writel(0x20, controller.reg + REG_USBD_IRQ_STAT);
 				udc_isr_dma(dev);
 			}
@@ -625,13 +650,27 @@ void paser_irq_nep(int irq, struct nuc970_ep *ep, u32 IrqSt)
 			if (__raw_readl(controller.reg + datacnt_reg) == 0)
 				break;
 
-			while (__raw_readl(controller.reg + REG_USBD_DMA_CTRL_STS)&0x20);//wait DMA complete
+			while (__raw_readl(controller.reg + REG_USBD_DMA_CTRL_STS) & 0x20)	//wait DMA complete
+			{
+				if (!(__raw_readl(controller.reg + REG_USBD_PHY_CTL) & 0x80000000))
+				{
+					printk("unplug!\n");
+					break;
+				}
+			}
 			fifo_count = __raw_readl(controller.reg + datacnt_reg);
 
 			if (dev->usb_dma_trigger)
 			{
 				pr_devel("RxED dma triggered\n");
-				while ((__raw_readl(controller.reg + REG_USBD_IRQ_STAT) & 0x20) == 0);
+				while ((__raw_readl(controller.reg + REG_USBD_IRQ_STAT) & 0x20) == 0)
+				{
+					if (!(__raw_readl(controller.reg + REG_USBD_PHY_CTL) & 0x80000000))
+					{
+						printk("unplug!\n");
+						break;
+					}
+				}
 				__raw_writel(0x02, controller.reg + REG_USBD_IRQ_STAT);
 				udc_isr_dma(dev);
 			}
@@ -667,11 +706,25 @@ void paser_irq_nepint(int irq, struct nuc970_ep *ep, u32 IrqSt)
 	switch (irq)
 	{
 		case EP_IN_TOK:
-			while (__raw_readl(controller.reg + REG_USBD_DMA_CTRL_STS)&0x20);//wait DMA complete
+			while (__raw_readl(controller.reg + REG_USBD_DMA_CTRL_STS)&0x20)	//wait DMA complete
+			{
+				if (!(__raw_readl(controller.reg + REG_USBD_PHY_CTL) & 0x80000000))
+				{
+					printk("unplug!\n");
+					break;
+				}
+			}
 			if (dev->usb_dma_trigger)
 			{
 				pr_devel("int IN dma triggered\n");
-				while ((__raw_readl(controller.reg + REG_USBD_IRQ_STAT) & 0x20) == 0);
+				while ((__raw_readl(controller.reg + REG_USBD_IRQ_STAT) & 0x20) == 0)
+				{
+					if (!(__raw_readl(controller.reg + REG_USBD_PHY_CTL) & 0x80000000))
+					{
+						printk("unplug!\n");
+						break;
+					}
+				}
 				__raw_writel(0x20, controller.reg + REG_USBD_IRQ_STAT);
 				udc_isr_dma(dev);
 			}
@@ -905,13 +958,14 @@ static int nuc970_ep_enable (struct usb_ep *_ep, const struct usb_endpoint_descr
 		if (ep->ep_type == USB_ENDPOINT_XFER_ISOC)
 		{
 			ep->ep_type = EP_TYPE_ISO;
-			ep->ep_mode = EP_MODE_FLY;
-		} else if (ep->ep_type == USB_ENDPOINT_XFER_BULK)
+			ep->ep_mode = EP_MODE_AUTO;
+		}
+		else if (ep->ep_type == USB_ENDPOINT_XFER_BULK)
 		{
 			ep->ep_type = EP_TYPE_BLK;
 			ep->ep_mode = EP_MODE_AUTO;
 		}
-		if (ep->ep_type == USB_ENDPOINT_XFER_INT)
+		else if (ep->ep_type == USB_ENDPOINT_XFER_INT)
 		{
 			ep->ep_type = EP_TYPE_INT;
 			ep->ep_mode = EP_MODE_MAN;
@@ -1099,6 +1153,7 @@ static int nuc970_queue(struct usb_ep *_ep, struct usb_request *_req, gfp_t gfp_
 			__raw_writel(CEP_NAK_CLEAR, controller.reg + REG_USBD_CEP_CTRL_STAT);   // clear nak so that sts stage is complete
 			__raw_writel(0x402, controller.reg + REG_USBD_CEP_IRQ_ENB);     // suppkt int//enb sts completion int
 			done(ep, req, 0);
+			__raw_writel(CEP_FLUSH, controller.reg + REG_USBD_CEP_CTRL_STAT);
 		}
 	}
 	else if (ep->index > 0)
@@ -1212,6 +1267,22 @@ static int nuc970_set_selfpowered (struct usb_gadget *_gadget, int value)
 	return 0;
 }
 
+static int nuc970_pullup (struct usb_gadget *g, int is_on)
+{
+	struct nuc970_udc *udc = to_nuc970_udc(g);
+
+	if (is_on)
+		nuc970_udc_enable(udc);
+	else {
+		if (udc->gadget.speed != USB_SPEED_UNKNOWN) {
+			if (udc->driver && udc->driver->disconnect)
+				udc->driver->disconnect(&udc->gadget);
+		}
+		nuc970_udc_disable(udc);
+	}
+	return 0;
+}
+
 static int nuc970_udc_start(struct usb_gadget *g, struct usb_gadget_driver *driver);
 static int nuc970_udc_stop(struct usb_gadget *g, struct usb_gadget_driver *driver);
 
@@ -1220,6 +1291,7 @@ static const struct usb_gadget_ops nuc970_ops =
 	.get_frame          = nuc970_g_get_frame,
 	.wakeup             = nuc970_wakeup,
 	.set_selfpowered    = nuc970_set_selfpowered,
+	.pullup             = nuc970_pullup,
 	.udc_start          = nuc970_udc_start,
 	.udc_stop           = nuc970_udc_stop,
 };
@@ -1233,6 +1305,8 @@ static void nuc970_udc_enable(struct nuc970_udc *dev)
 
 static void nuc970_udc_disable(struct nuc970_udc *dev)
 {
+	__raw_writel(0, controller.reg + REG_USBD_CEP_IRQ_ENB);
+	__raw_writel(0xffff, controller.reg + REG_USBD_CEP_IRQ_STAT);
 	__raw_writel(__raw_readl(controller.reg + REG_USBD_PHY_CTL) & ~0x100, controller.reg + REG_USBD_PHY_CTL);
 	dev->gadget.speed = USB_SPEED_UNKNOWN;
 }
@@ -1370,6 +1444,15 @@ static void udc_isr_dma(struct nuc970_udc *dev)
 		{
 			__raw_writel(dev->usb_dma_cnt, controller.reg + REG_USBD_EPA_TRF_CNT+0x28*(ep->index-1));
 		}
+		else if (ep->ep_type == EP_TYPE_ISO)
+		{
+			if (dev->usb_less_mps == 1)
+			{
+				__raw_writel((__raw_readl(controller.reg + REG_USBD_EPA_RSP_SC+0x28*(ep->index-1))&0xF7)|0x40,
+							 controller.reg + REG_USBD_EPA_RSP_SC+0x28*(ep->index-1)); // packet end
+				dev->usb_less_mps = 0;
+			}
+		}
 		req->req.actual += dev->usb_dma_cnt;
 		if ((req->req.length == req->req.actual) || dev->usb_dma_cnt < ep->ep.maxpacket)
 		{
@@ -1491,13 +1574,7 @@ static void udc_isr_ctrl_pkt(struct nuc970_udc *dev)
 					break;
 
 				case USBR_SET_INTERFACE:
-					ReqErr = ((crq.bRequestType == 0x1) && ((crq.wValue & 0xff80) == 0)
-							  && ((crq.wIndex & 0xfff0) == 0) && (crq.wLength == 0)) ? 0 : 1;
-
-					if (!((dev->usb_devstate == 0x3) && (crq.wIndex == 0x0) && (crq.wValue == 0x0)))
-						ReqErr=1;
-					if (ReqErr == 1)
-						break;  //break this switch loop
+					break;  //break this switch loop
 
 				default:
 					;
@@ -1650,7 +1727,15 @@ static u32 udc_transfer(struct nuc970_ep *ep, u8* buf, size_t size, u32 mode)
 	loop = size / USBD_DMA_LEN;
 	if (mode == DMA_WRITE)
 	{
-		while (!(__raw_readl(controller.reg + REG_USBD_EPA_IRQ_STAT + (0x28* (ep->index-1))) & 0x02));
+		//while (!(__raw_readl(controller.reg + REG_USBD_EPA_IRQ_STAT + (0x28* (ep->index-1))) & 0x02))
+		while (__raw_readl(controller.reg + REG_USBD_DMA_CTRL_STS) & 0x20)	//wait DMA complete
+		{
+			if (!(__raw_readl(controller.reg + REG_USBD_PHY_CTL) & 0x80000000))
+			{
+				printk("unplug!\n");
+				return 0;
+			}
+		}
 		{
 			dev->usb_dma_dir = Ep_In;
 			dev->usb_less_mps = 0;
@@ -1679,7 +1764,7 @@ static u32 udc_transfer(struct nuc970_ep *ep, u8* buf, size_t size, u32 mode)
 				}
 				else
 				{
-					if (ep->ep_type == EP_TYPE_BLK)
+					if ((ep->ep_type == EP_TYPE_BLK) || (ep->ep_type == EP_TYPE_ISO))
 						dev->usb_less_mps = 1;
 					start_write(ep, buf, size);
 				}
@@ -1882,8 +1967,7 @@ static int nuc970_udc_remove(struct platform_device *pdev)
 #ifdef CONFIG_PM
 static int nuc970_udc_suspend (struct platform_device *pdev, pm_message_t state)
 {
-	__raw_writel(__raw_readl(controller.reg + REG_USBD_PHY_CTL) & ~0x200,
-				 controller.reg + REG_USBD_PHY_CTL);    // phy suspend
+	__raw_writel(__raw_readl(controller.reg + REG_USBD_PHY_CTL) & ~0x200, controller.reg + REG_USBD_PHY_CTL);    // phy suspend
 	return 0;
 }
 
