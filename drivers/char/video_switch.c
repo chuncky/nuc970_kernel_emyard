@@ -51,12 +51,34 @@ unsigned char SW16x16_CHIP_I2C_ADDR[4]={
 	};
 
 
+typedef unsigned char U8;
+typedef unsigned short U16;
+#define DLTIME 5
+
 #define delay_us udelay
 #define delay_ms mdelay
 
-typedef unsigned char U8;
-typedef unsigned short U16;
+#if 0
+void delay_us(u16 time)
+{    
+   u16 i=0;  
+   while(time--)
+   {
+      i=10;  
+      while(i--) ;    
+   }
+}
 
+void delay_ms(u16 time)
+{    
+   u16 i=0;  
+   while(time--)
+   {
+      i=12000;  
+      while(i--) ;    
+   }
+}
+#endif
 unsigned char sPoweron;
 
 unsigned char XPT_MP0[8]={0x90,0x91,0x92,0x93,0x94,0x95,0x96,0x97};
@@ -88,7 +110,40 @@ const unsigned char SW8X8_Data_OUT[8][4]={//d0 d1 d2 ck
 							   };
 
 
+unsigned char SW10X10_XPT_MP0[40]={
+				0x04,0x05,0x06,0x07,0x08,0x09,0x0A,0x0B,0x0C,0x0D,
+				0x0E,0x0F,0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,
+				0x18,0x19,0x1A,0x1B,0x1C,0x1D,0x1E,0x1F,0x20,0x21,
+				0x22,0x23,0x24,0x25,0x26,0x27,0x28,0x29,0x2A,0x2B
+				};
 
+
+// Êý¾ÝÇø
+const unsigned char SW10X10_Data_IN[10][4]={//d0 d1 d2 ck	
+					{22, 23, 20, 21},//1
+					{26, 27, 24, 25},//2
+					{30, 31, 28, 29},//3
+					{34, 35, 32, 33},//4
+					{38, 39, 36, 37},//5
+					{ 2, 19,  0, 17},//6
+					{ 6, 15,  4, 13},//7
+					{10,  3,  8,  1},//8
+					{14,  7, 12,  5},//9
+					{18, 11, 16,  9},//10
+					};
+									
+const unsigned char SW10X10_Data_OUT[10][4]={//d0 d1 d2 ck	
+					{22, 23, 20, 21},//1
+					{26, 27, 24, 25},//2
+					{30, 31, 28, 29},//3
+					{34, 35, 32, 33},//4
+					{38, 39, 36, 37},//5
+					{ 2,  3,  0,  1},//6
+					{ 6,  7,  4,  5},//7
+					{10, 11,  8,  9},//8
+					{14, 15, 12, 13},//9
+					{19, 17, 18, 16},//10
+					};
 
 
 const unsigned char SW16X16_Data_IN[16][4]={//d0 d1 d2 ck	
@@ -184,6 +239,92 @@ unsigned char SW20X20_XPT_MP0[40]={0x04,0x05,0x06,0x07,0x08,0x09,0x0A,0x0B,0x0C,
 			0x22,0x23,0x24,0x25,0x26,0x27,0x28,0x29,0x2A,0x2B};
 
 
+
+// Êý¾ÝÇø
+//==============================??=====================================//
+
+const unsigned char SW36X36_Data_IN[36][4]={
+					//d0  d1  d2  ck
+					{128, 140, 142, 134},//1 
+					{112, 124, 118, 132},//2
+					{ 96, 108, 102, 116},//3
+					{ 80,  92,  86, 100},//4
+					{ 64,  76,  70,  84},//5
+					{ 48,  60,  54,  68},//6
+					{ 32,  44,  38,  52},//7
+					{ 16,  28,  22,  36},//8
+					{ 14,  12,   4,  20},//9
+					{ 17,  13,   7,   9},//10
+					{ 15,  29,   1,  25},//11
+					{ 33,  45,  31,  41},//12
+					{ 49,  61,  47,  57},//13
+					{ 65,  77,  63,  73},//14
+					{ 81,  93,  79,  89},//15
+					{ 97, 109,  95, 105},//16
+					{113, 125, 111, 121},//17
+					{135, 141, 127, 137},//18
+					{130, 126, 138, 136},//19
+					{114, 110, 122, 120},//20
+					{ 98,  94, 106, 104},//21
+					{ 82,  78,  90,  88},//22
+					{ 66,  62,  74,  72},//23
+					{ 50,  46,  58,  56},//24
+					{ 34,  30,  42,  40},//25
+					{ 18,   6,  26,  24},//26
+					{  2,   0,  10,   8},//27
+					{ 11,   5,   3,  21},//28
+					{ 27,  23,  19,  37},//29
+					{ 43,  39,  35,  53},//30
+					{ 59,  55,  51,  69},//31
+					{ 75,  71,  67,  85},//32
+					{ 91,  87,  83, 101},//33
+					{107, 103,  99, 117},//34
+					{123, 119, 115, 133},//35
+					{139, 143, 131, 129},//36
+// 									98,106,114,122,//17
+					};
+									
+const unsigned char SW36X36_Data_OUT[36][4]={
+								//d0 d1 d2 ck
+					{2,22,10,34},//1
+					{26,16,4,14},//2
+					{38,40,28,32},//3
+					{50,52,46,44},//4
+					{20,58,8,56},//5
+					{6,64,0,62},//6
+					{18,70,12,68},//7
+					{30,76,24,74},//8
+					{42,82,36,80},//9
+					{54,88,48,86},//10
+					{66,94,60,92},//11
+					{78,100,72,98},//12
+					{90,106,84,104},//13
+					{102,112,96,110},//14
+					{114,118,108,116},//15
+					{126,124,120,128},//16
+					{138,130,132,140},//17
+					{134,142,122,136},//18
+					{35,29,45,3},//19
+					{41,15,51,27},//20
+					{47,33,57,39},//21
+					{53,9,63,21},//22
+					{59,1,69,7},//23
+					{65,13,75,19},//24
+					{71,25,81,31},//25
+					{77,37,87,43},//26
+					{83,49,93,55},//27
+					{89,61,99,67},//28
+					{95,73,105,79},//29
+					{101,85,111,91},//30
+					{107,97,117,103},//31
+					{113,109,129,115},//32
+					{119,121,141,127},//33
+					{131,133,125,139},//34
+					{143,123,137,135},//35
+					{17,23,11,5},//36
+					};//
+
+
 static int matrix_type;
 
 U16 temp;
@@ -207,7 +348,18 @@ Switch_Info sw8x8_info={
 	//.Data_IN=&SW8X8_Data_IN,
 	//.Data_OUT=&SW8X8_Data_OUT,
 };
+Switch_Info sw10x10_info={
+	.rs=NUC970_PA13,
+	.scl=NUC970_PG8,
+	.sda=NUC970_PG7,
+	.update=NUC970_PG6,
+	.output_maxnum=10,
+	.input_maxnum=10,
 
+	//.XPT_MP0=&SW8X8_XPT_MP0,
+	//.Data_IN=&SW8X8_Data_IN,
+	//.Data_OUT=&SW8X8_Data_OUT,
+};
 
 Switch_Info sw20x20_info={
 	.rs=NUC970_PA13,
@@ -233,98 +385,88 @@ Switch_Info sw16x16_info={
 	//.Data_OUT=&SW16X16_Data_OUT,
 };
 
+Switch_Info sw36x36_info={
+	.rs=NUC970_PA11,
+	.scl=NUC970_PG8,
+	.sda=NUC970_PG7,
+	.update=NUC970_PG6,
+	.output_maxnum=36,
+	.input_maxnum=36,
+	//.XPT_MP0=&SW8X8_XPT_MP0,
+	//.Data_IN=&SW16X16_Data_IN,
+	//.Data_OUT=&SW16X16_Data_OUT,
+};
+
 void ADN460x_I2CStart(void)
 {
-	 //ADN460x_DIR_OUT();
+
 	DATA_DIR_OUT(psw_info->sda);
-	
- 	 //ADN460x_SCL_H;//CLK
 	SW_PIN_H(psw_info->scl);
-	 delay_us(10);
-	 //ADN460x_SDA_H;//DATA
+	delay_us(DLTIME);
 	SW_PIN_H(psw_info->sda);
-   delay_us(10);
-	 //ADN460x_SDA_L;//DATA
+   	delay_us(DLTIME);
 	SW_PIN_L(psw_info->sda);
-	 delay_us(10);
-	 //SCL_L;//CLK
+	delay_us(DLTIME);
+
 }
 //////////////
 void ADN460x_I2CStop(void)
 {
- 	 //DIR_OUT;//
-	 //ADN460x_SCL_H;//CLK
 	SW_PIN_H(psw_info->scl);
-	 delay_us(10);
-	 //ADN460x_SDA_L;//DATA
+	delay_us(DLTIME);
 	SW_PIN_L(psw_info->sda);
-	 delay_us(10);
-	 //ADN460x_SDA_H;//DATA
+	delay_us(DLTIME);
 	SW_PIN_H(psw_info->sda);
-	 delay_us(10);
+	delay_us(DLTIME);
 }
 
 ////////////send ACK
 void ADN460x_SendACK(void)
 {
- 	 //ADN460x_SDA_L;//DATA
 	SW_PIN_L(psw_info->sda);
-	 delay_us(10);
-	 //ADN460x_SCL_H;//CLK
+	delay_us(DLTIME);
 	SW_PIN_H(psw_info->scl);
-	 delay_us(10);
-	 //ADN460x_SCL_L;//CLK
+	delay_us(DLTIME);
 	SW_PIN_L(psw_info->scl);
-	 delay_us(10);
+	delay_us(DLTIME);
 }
 
 /////////////send NotACK
 void ADN460x_SendNotACK(void)
 {
- 	 //ADN460x_SDA_H;//DATA
 	SW_PIN_H(psw_info->sda);
-	 delay_us(10);
-	 //ADN460x_SCL_H;//CLK
+	delay_us(DLTIME);
 	SW_PIN_H(psw_info->scl);
-	 delay_us(10);
-	 //ADN460x_SCL_L;//CLK
+	delay_us(DLTIME);
 	SW_PIN_L(psw_info->scl);
-	 delay_us(10);
+	delay_us(DLTIME);
 }
 //////////////wait ack
 unsigned char ADN460x_WaitAck(void)
 {
- 	  unsigned char errtime=255;
-	  //ADN460x_SDA_H;//DATA
+ 	unsigned char errtime=255;
+
 	SW_PIN_H(psw_info->sda);
-	  delay_us(10);
-
-	  //ADN460x_DIR_IN();
+	delay_us(DLTIME);
 	DATA_DIR_IN(psw_info->sda);
-	  delay_us(10);
-
-		//while(ADN460x_DATA)//
-		while(DATA_IN(psw_info->sda))//
+	delay_us(DLTIME);
+	while(DATA_IN(psw_info->sda))//
+	{
+		errtime--;
+		if(!errtime)
 		{
-				errtime--;
-				if(!errtime)
-			{
-					ADN460x_I2CStop();
-				        printk("no ack\r\n");
-					return 0;
-			}
+			ADN460x_I2CStop();
+			printk("no ack\r\n");
+			return 0;
 		}
-//	 if(debug)
-//		 uart4_putchar(0x12);
- 	 //ADN460x_DIR_OUT();
-	DATA_DIR_OUT(psw_info->sda);
-	 //ADN460x_SCL_H;//CLK
+	}
 	SW_PIN_H(psw_info->scl);
-	 delay_us(10);
-	 //ADN460x_SCL_L;//CLK
+	delay_us(DLTIME);
 	SW_PIN_L(psw_info->scl);
-	 delay_us(10);
-	 return 1;
+	delay_us(DLTIME);
+	DATA_DIR_OUT(psw_info->sda);
+	delay_us(DLTIME);
+	return 1;
 }
 
 /////I2c  send a byte 
@@ -333,82 +475,67 @@ void ADN460x_I2CSendByte(unsigned char x)
 	unsigned char i=8,mid;
 
 	while(i--)
-  {
-			//ADN460x_SCL_L;//CLK
+	{
 		SW_PIN_L(psw_info->scl);
-			delay_us(10);
-			mid=x&0x80;
-			if(mid==0)
-				//ADN460x_SDA_L;//DATA
-				SW_PIN_L(psw_info->sda);
-			else
-				//ADN460x_SDA_H;//DATA
-				SW_PIN_H(psw_info->sda);
-			x<<=1;
-			delay_us(10);
-			//ADN460x_SCL_H;//CLK
-			SW_PIN_H(psw_info->scl);
-			delay_us(10);
-  }
-	//ADN460x_SCL_L;//CLK
+		delay_us(DLTIME);
+		mid=x&0x80;
+		if(mid==0)
+			SW_PIN_L(psw_info->sda);
+		else
+			SW_PIN_H(psw_info->sda);
+		x<<=1;
+		delay_us(DLTIME);
+		SW_PIN_H(psw_info->scl);
+		delay_us(DLTIME);
+  	}
 	SW_PIN_L(psw_info->scl);
-	delay_us(10);
+	delay_us(DLTIME);
 }
 ///////// receive a byte
 unsigned char ADN460x_I2CReceiveByte(void)/////////////////
 {
 	unsigned char i=8,data=0,mid;
-	//ADN460x_SCL_L;//CLK
+
 	SW_PIN_L(psw_info->scl);
-	//ADN460x_DIR_IN();
 	DATA_DIR_IN(psw_info->sda);
+	delay_us(DLTIME);
 	while(i--)
 	{
 			data<<=1;
-			//ADN460x_SCL_L;//CLK
-			SW_PIN_L(psw_info->scl);
-			delay_us(10);
-			//mid=ADN460x_DATA;
+			SW_PIN_H(psw_info->scl);
+			delay_us(DLTIME);
 			mid=DATA_IN(psw_info->sda);
 			if(mid==0)
 					data|=0;
 			else
 					data|=1;
-			//ADN460x_SCL_H;//CLK
-			SW_PIN_H(psw_info->scl);
-			delay_us(10);	
-			//ADN460x_SCL_L;//CLK
-			SW_PIN_L(psw_info->scl);	
+			delay_us(DLTIME);	
+			SW_PIN_L(psw_info->scl);
+			delay_us(DLTIME);	
+	
 	}
-   //ADN460x_DIR_OUT();
 	DATA_DIR_OUT(psw_info->sda);
+	delay_us(DLTIME);
    return data;
 }
 
-
-
-
-
-
-
-
 void ADN460x_I2C_Write(unsigned char i2c_addr,unsigned char Wdata,unsigned int RomAddress)
 {
-  ADN460x_I2CStart();
+  	ADN460x_I2CStart();
 	ADN460x_I2CSendByte(i2c_addr);//Device Add+W
 	ADN460x_WaitAck();
 	ADN460x_I2CSendByte(RomAddress);
 	ADN460x_WaitAck();
 	ADN460x_I2CSendByte(Wdata);
-	ADN460x_SendACK();
+	ADN460x_WaitAck();
 	ADN460x_I2CStop();
-	delay_ms(10);
+	delay_us(DLTIME);
 }
 
 unsigned char ADN460x_I2C_Read(unsigned char i2c_addr,unsigned char RomAddress)
 {
-  unsigned char Rx_Data;
-  ADN460x_I2CStart();
+	unsigned char Rx_Data;
+	ADN460x_I2CStart();
 	ADN460x_I2CSendByte(i2c_addr);//Device Add+W
 	ADN460x_WaitAck();
 	ADN460x_I2CSendByte(RomAddress);
@@ -430,69 +557,57 @@ void ADN4605_I2CStart(void)
 	DATA_DIR_OUT(psw_info->sda);
 	//ADN4605_SCL_H;//CLK
 	SW_PIN_H(psw_info->scl);
-	delay_us(10);
+	delay_us(DLTIME);
 	//SW_SDA_H;//DATA
 	SW_PIN_H(psw_info->sda);
-	delay_us(10);
+	delay_us(DLTIME);
 	//SW_SDA_L;//DATA
 	SW_PIN_L(psw_info->sda);
-	delay_us(10);
+	delay_us(DLTIME);
 	 //SCL_L;//CLK
 }
-
-
-
-
-
 //////////////
 void ADN4605_I2CStop(void)
 {
 	//DIR_OUT;//??????????
 	//SW_SCL_H;//CLK
 	SW_PIN_H(psw_info->scl);
-	delay_us(10);
+	delay_us(DLTIME);
 	//SW_SDA_L;//DATA
 	SW_PIN_L(psw_info->sda);
-	delay_us(10);
+	delay_us(DLTIME);
 	//SW_SDA_H;//DATA
 	SW_PIN_H(psw_info->sda);
-	delay_us(10);
+	delay_us(DLTIME);
 }
-
-
-
 
 //////////////?????,?????(????)
 void ADN4605_SendACK(void)
 {
  	 //SW_SDA_L;//DATA
 	SW_PIN_L(psw_info->sda);
-	 delay_us(10);
+	 delay_us(DLTIME);
 	 //SW_SCL_H;//CLK
 	SW_PIN_H(psw_info->scl);
-	 delay_us(10);
+	 delay_us(DLTIME);
 	 //SW_SCL_L;//CLK
 	SW_PIN_L(psw_info->scl);
-	 delay_us(10);
+	 delay_us(DLTIME);
 }
-
-
 
 //////////////?????,?????(?????)
 void ADN4605_SendNotACK(void)
 {
  	 //SW_SDA_H;//DATA
 	SW_PIN_H(psw_info->sda);
-	 delay_us(10);
+	 delay_us(DLTIME);
 	 //SW_SCL_H;//CLK
 	SW_PIN_H(psw_info->scl);
-	 delay_us(10);
+	 delay_us(DLTIME);
 	 //SW_SCL_L;//CLK
 	SW_PIN_L(psw_info->scl);
-	 delay_us(10);
+	 delay_us(DLTIME);
 }
-
-
 
 //////////////??????)
 unsigned char ADN4605_WaitAck(void)
@@ -500,38 +615,33 @@ unsigned char ADN4605_WaitAck(void)
  	  unsigned char errtime=255;
 	  //SW_SDA_H;//DATA
 	SW_PIN_H(psw_info->sda);
-	  delay_us(10);
-
+	//delay_us(DLTIME);
 	  //SDA_DIR_IN();
 	DATA_DIR_IN(psw_info->sda);
-	  delay_us(10);
+	delay_us(DLTIME);
 
-		while(DATA_IN(psw_info->sda))//
+	while(DATA_IN(psw_info->sda))//
+	{
+		errtime--;
+		if(!errtime)
 		{
-				errtime--;
-				if(!errtime)
-			{
-					ADN4605_I2CStop();
-// 					if(debug)
-// 						uart4_putchar(0x11);
-				printk("no ack\r\n");
-					return 0;
-			}
+			ADN4605_I2CStop();
+			printk("no ack\r\n");
+			return 0;
 		}
-	 //if(debug)
-		// printk(0x12);
- 	 //SDA_DIR_OUT();
-	DATA_DIR_OUT(psw_info->sda);
+	}
+
 	 //SW_SCL_H;//CLK
 	SW_PIN_H(psw_info->scl);
-	 delay_us(10);
+	 delay_us(DLTIME);
 	 //SW_SCL_L;//CLK
 	SW_PIN_L(psw_info->scl);
-	 delay_us(10);
+	 delay_us(DLTIME);
+	DATA_DIR_OUT(psw_info->sda);
+	delay_us(DLTIME);
+
 	 return 1;
 }
-
-
 
 //////////////??????
 void ADN4605_I2CSendByte(unsigned char x)
@@ -539,32 +649,27 @@ void ADN4605_I2CSendByte(unsigned char x)
 	unsigned char i=8,mid;
 
 	while(i--)
-  {
-			//SW_SCL_L;//CLK
-			SW_PIN_L(psw_info->scl);
-			delay_us(10);
-			mid=x&0x80;
-			if(mid==0)
-				//SW_SDA_L;//DATA
-				SW_PIN_L(psw_info->sda);
-			else
-				//SW_SDA_H;//DATA
-				SW_PIN_H(psw_info->sda);
-			x<<=1;
-			delay_us(10);
-			//SW_SCL_H;//CLK
-			SW_PIN_H(psw_info->scl);
-			delay_us(10);
-  }
+  	{
+		//SW_SCL_L;//CLK
+		SW_PIN_L(psw_info->scl);
+		delay_us(DLTIME);
+		mid=x&0x80;
+		if(mid==0)
+			//SW_SDA_L;//DATA
+			SW_PIN_L(psw_info->sda);
+		else
+			//SW_SDA_H;//DATA
+			SW_PIN_H(psw_info->sda);
+		x<<=1;
+		delay_us(DLTIME);
+		//SW_SCL_H;//CLK
+		SW_PIN_H(psw_info->scl);
+		delay_us(DLTIME);
+  	}
 	//SW_SCL_L;//CLK
 	SW_PIN_L(psw_info->scl);
-	delay_us(10);
+	delay_us(DLTIME);
 }
-
-
-
-
-
 
 //////////////??????
 unsigned char ADN4605_I2CReceiveByte(void)/////////////////
@@ -574,49 +679,50 @@ unsigned char ADN4605_I2CReceiveByte(void)/////////////////
 	SW_PIN_L(psw_info->scl);
 	//SDA_DIR_IN();
 	DATA_DIR_IN(psw_info->sda);
+	delay_us(DLTIME);
 	while(i--)
-  {
+	{
 			data<<=1;
 			//SW_SCL_L;//CLK
-			SW_PIN_L(psw_info->scl);
-			delay_us(10);
+			SW_PIN_H(psw_info->scl);
+			delay_us(DLTIME);
 			mid=DATA_IN(psw_info->sda);
 			if(mid==0)
 					data|=0;
 			else
 					data|=1;
-			//SW_SCL_H;//CLK
-			SW_PIN_H(psw_info->scl);
-			delay_us(10);	
+			delay_us(DLTIME);	
 			//SW_SCL_L;//CLK	
 			SW_PIN_L(psw_info->scl);
-   }
-   //SDA_DIR_OUT();
-	DATA_DIR_OUT(psw_info->sda);
-   return data;
-}
+			delay_us(DLTIME);
 
+   	}
+   	//SDA_DIR_OUT();
+	DATA_DIR_OUT(psw_info->sda);
+	delay_us(DLTIME);
+   	return data;
+}
 
 void ADN4605_I2C_Write(unsigned char i2c_addr,unsigned char Wdata,unsigned int RomAddress)
 {
-  ADN4605_I2CStart();
+  	ADN4605_I2CStart();
 	ADN4605_I2CSendByte(i2c_addr);//Device Add+W
 	ADN4605_WaitAck();
 	ADN4605_I2CSendByte(RomAddress);
 	ADN4605_WaitAck();
 	ADN4605_I2CSendByte(Wdata);
-	ADN4605_SendACK();
+	//ADN4605_SendACK();
+	ADN4605_WaitAck();
 	ADN4605_I2CStop();
 //  	delay_ms(5);
 }
 
 
 
-
 unsigned char ADN4605_I2C_Read(unsigned char i2c_addr,unsigned char RomAddress)
 {
   unsigned char Rx_Data;
-  ADN4605_I2CStart();
+  	ADN4605_I2CStart();
 	ADN4605_I2CSendByte(i2c_addr);//Device Add+W
 	ADN4605_WaitAck();
 	ADN4605_I2CSendByte(RomAddress);
@@ -794,6 +900,134 @@ printk("\n");
 	SW_PIN_H(psw_info->update);
 }
 
+void ad4605_registdump(void)
+{
+ 	int i;
+	unsigned char data;
+	printk("\n%s-xpt0\n",__func__);
+	for(i=0;i<40;i++){
+		data=ADN4605_I2C_Read(ADN460x_CHIP_1_I2C_ADDR,i+0x04);
+		printk("0x%02x,",data);
+		if(((i+1)%10)==0)
+			printk("\n");
+
+	}
+	printk("\n%s-xpt\n",__func__);
+	for(i=0;i<40;i++){
+		data=ADN4605_I2C_Read(ADN460x_CHIP_1_I2C_ADDR,i+0x2c);
+		printk("0x%02x,",data);
+		if(((i+1)%10)==0)
+			printk("\n");
+
+	}
+	printk("\n%s-xpt status\n",__func__);
+	for(i=0;i<40;i++){
+		data=ADN4605_I2C_Read(ADN460x_CHIP_1_I2C_ADDR,i+0x54);
+		printk("0x%02x,",data);
+		if(((i+1)%10)==0)
+			printk("\n");
+
+	}
+
+
+}
+
+void reset_sw10x10(void)
+{
+	printk("%s-01\n",__func__);
+	//ADN460x_RESET_L;
+	SW_PIN_L(psw_info->rs);
+	delay_ms(3000);
+	//ADN460x_RESET_H;
+	SW_PIN_H(psw_info->rs);
+	//ad4605_registdump();
+	ADN4605_I2C_Write(ADN460x_CHIP_1_I2C_ADDR,0x01,0x00);
+
+
+
+}
+
+
+void SW10x10_DCS_ALL_Init(void)
+{
+	int i = 0;
+	//unsigned char data;
+	printk("%s-01\n",__func__);
+ 	reset_sw10x10();
+	//ADN4605_I2C_Write(0xC0,0xBA);
+	ADN4605_I2C_Write(ADN460x_CHIP_1_I2C_ADDR,0x00,0x02);
+
+	//ADN4605_I2C_Write(ADN460x_CHIP_1_I2C_ADDR,0x55,0xC0);
+	//data=ADN4605_I2C_Read(ADN460x_CHIP_1_I2C_ADDR,0xC0);
+	//printk("data=0x%x\n",data);
+      	//mdelay(1000);
+
+	for(i=0;i<11;i++)
+	{
+    		ADN4605_I2C_Write(ADN460x_CHIP_1_I2C_ADDR,0xff,0xC0+i);
+	}
+ 	for(i=0;i<10;i++)
+	{
+    		ADN4605_I2C_Write(ADN460x_CHIP_1_I2C_ADDR,0xff,0xb0+i);
+	}
+
+	//ad4605_registdump();
+}
+
+
+
+
+void SW10x10_Up_One_Data(unsigned char output,unsigned char input)
+{
+	printk("%s:input %d to output %d\n",__func__,input,output);
+	
+	
+	//ADN4605_I2C_Write(Data_IN[input][0],XPT_MP0[Data_OUT[output][0]]);
+	ADN4605_I2C_Write(ADN460x_CHIP_1_I2C_ADDR,SW10X10_Data_IN[input][0],SW10X10_XPT_MP0[SW10X10_Data_OUT[output][0]]);
+    	//ADN4605_I2C_Write(Data_IN[input][1],XPT_MP0[Data_OUT[output][1]]);
+	ADN4605_I2C_Write(ADN460x_CHIP_1_I2C_ADDR,SW10X10_Data_IN[input][1],SW10X10_XPT_MP0[SW10X10_Data_OUT[output][1]]);
+	//ADN4605_I2C_Write(Data_IN[input][2],XPT_MP0[Data_OUT[output][2]]);
+	ADN4605_I2C_Write(ADN460x_CHIP_1_I2C_ADDR,SW10X10_Data_IN[input][2],SW10X10_XPT_MP0[SW10X10_Data_OUT[output][2]]);
+	//ADN4605_I2C_Write(Data_IN[input][3],XPT_MP0[Data_OUT[output][3]]);
+	ADN4605_I2C_Write(ADN460x_CHIP_1_I2C_ADDR,SW10X10_Data_IN[input][3],SW10X10_XPT_MP0[SW10X10_Data_OUT[output][3]]);
+		//ADN460x_UPDATE_L;
+	SW_PIN_L(psw_info->update);
+		//ADN460x_UPDATE_H;
+	SW_PIN_H(psw_info->update);
+
+	ADN4605_I2C_Write(ADN460x_CHIP_1_I2C_ADDR,0x01,0x01);
+
+}
+
+
+void SW10x10_Up_All_Data(unsigned char channels,unsigned char iMtxState[])
+{
+	unsigned char iNdx_O = 0,iNdx_I = 0;
+
+	printk("%s:channels=%d:\n",__func__,channels);	
+	for(iNdx_O=0;iNdx_O<channels;iNdx_O++)
+	{
+	//printk("%4d;",iMtxState[iNdx_O]);		
+		iNdx_I=iMtxState[iNdx_O];
+		//ADN4605_I2C_Write(Data_IN[iNdx_I][0],XPT_MP0[Data_OUT[iNdx_O][0]]);
+		ADN4605_I2C_Write(ADN460x_CHIP_1_I2C_ADDR,SW10X10_Data_IN[iNdx_I][0],SW10X10_XPT_MP0[SW10X10_Data_OUT[iNdx_O][0]]);
+		//ADN4605_I2C_Write(Data_IN[iNdx_I][1],XPT_MP0[Data_OUT[iNdx_O][1]]);
+		ADN4605_I2C_Write(ADN460x_CHIP_1_I2C_ADDR,SW10X10_Data_IN[iNdx_I][1],SW10X10_XPT_MP0[SW10X10_Data_OUT[iNdx_O][1]]);
+		//ADN4605_I2C_Write(Data_IN[iNdx_I][2],XPT_MP0[Data_OUT[iNdx_O][2]]);
+		ADN4605_I2C_Write(ADN460x_CHIP_1_I2C_ADDR,SW10X10_Data_IN[iNdx_I][2],SW10X10_XPT_MP0[SW10X10_Data_OUT[iNdx_O][2]]);
+		//ADN4605_I2C_Write(Data_IN[iNdx_I][3],XPT_MP0[Data_OUT[iNdx_O][3]]);	
+		ADN4605_I2C_Write(ADN460x_CHIP_1_I2C_ADDR,SW10X10_Data_IN[iNdx_I][3],SW10X10_XPT_MP0[SW10X10_Data_OUT[iNdx_O][3]]);
+		
+	}
+	//printk("\n");		 
+
+	//ADN460x_UPDATE_L;
+	//SW_PIN_L(psw_info->update);
+	//ADN460x_UPDATE_H;
+	//SW_PIN_H(psw_info->update);
+	ADN4605_I2C_Write(ADN460x_CHIP_1_I2C_ADDR,0x01,0x01);
+	//ad4605_registdump();
+}
 
 
 void reset_sw16x16(void)
@@ -992,6 +1226,159 @@ void SW16x16_Up_All_Data(unsigned char channels,unsigned char iMtxState[])
 
 }
 
+void reset_sw36x36(void)
+{	
+	delay_ms(600);
+	SW_PIN_L(psw_info->rs);
+	delay_ms(600);
+	SW_PIN_H(psw_info->rs);
+	delay_ms(600);
+}
+
+void Sw36x36_Config_Date(unsigned int OUT_data,unsigned char IN_data)//NUM 0 U1 £»1£ºU2
+{
+ 	 unsigned char icount;
+	// SCLK_H;//
+	SW_PIN_H(psw_info->scl);
+	 //xCS_H;//
+	SW_PIN_H(psw_info->update);
+	 //DI_H;//
+	SW_PIN_H(psw_info->sda);
+	 //xCS_L;
+	SW_PIN_L(psw_info->update);
+	 //SCLK_L;//
+	SW_PIN_L(psw_info->scl);
+     	//WR
+     	//DI_L;
+	SW_PIN_L(psw_info->sda);
+	//SCLK_H;
+	SW_PIN_H(psw_info->scl);
+	//SCLK_L;
+	SW_PIN_L(psw_info->scl);
+	 //Add  A9-A0
+	for(icount=0;icount<10;icount++)
+	{
+		if(OUT_data&0x200)//10 0000 0000
+			//DI_H;
+			SW_PIN_H(psw_info->sda);
+		else
+			//DI_L;
+			SW_PIN_L(psw_info->sda);
+		OUT_data<<=1;
+
+		//SCLK_H;
+		SW_PIN_H(psw_info->scl);
+		//SCLK_L;
+		SW_PIN_L(psw_info->scl);
+	}
+		
+	 //Data
+	for(icount=0;icount<7;icount++)//7Bits
+	{
+		if(IN_data&0x80)
+			//DI_H;
+			SW_PIN_H(psw_info->sda);
+		else
+			//DI_L;
+			SW_PIN_L(psw_info->sda);
+		IN_data<<=1;
+		//SCLK_H;
+		SW_PIN_H(psw_info->scl);
+		//SCLK_L;
+		SW_PIN_L(psw_info->scl);
+	}
+		
+		
+	//the last bit of IN_data
+	///////////////
+	if(IN_data&0x80)
+		//DI_H;
+		SW_PIN_H(psw_info->sda);
+	else
+		//DI_L;
+		SW_PIN_L(psw_info->sda);
+	///////////////
+	//SCLK_H;
+	SW_PIN_H(psw_info->scl);
+	 //xCS_H;//
+	SW_PIN_H(psw_info->update);
+	//SCLK_L;
+	SW_PIN_L(psw_info->scl);
+
+}
+
+void SW36x36_DCS_ALL_Init(void)
+{
+	unsigned int i,j;
+	reset_sw36x36();
+	for(j = 0;j<50;j++)
+	{
+		Sw36x36_Config_Date(0xCB,0x0);//bug
+		Sw36x36_Config_Date(0xCB,0x0);//bug
+	
+		Sw36x36_Config_Date(0xB8,0x00);//xSETmode 00-ÅäÖÃ¼´ÉúÐ§01-soft Act 10-hard Act
+		Sw36x36_Config_Date(0xBA,0x43);//IOenable DC offset en; EQ=12dB;900mV;in Act//0x63,0x43,0x23
+ 		Sw36x36_Config_Date(0xBB,0x0A);//50%DE 60PS DE_ALL FULL_POWER		
+
+		for(i=512;i<656;i++)
+		{
+			Sw36x36_Config_Date(i,0);
+		} 
+		//SCLK_H;
+		SW_PIN_H(psw_info->scl);
+		//xCS_L;//
+		SW_PIN_L(psw_info->update);
+		//SCLK_L;
+		SW_PIN_L(psw_info->scl);
+	}	 
+
+}
+
+void SW36x36_Up_One_Data(unsigned char output,unsigned char input)
+{
+
+	////////////////////////////////////U1//////////////////////////////////////////
+	printk("%s:input %d to output %d\n",__func__,input,output);
+ 	 Sw36x36_Config_Date(0xCB,0x0);//bug
+	 //-------------------------------------------------------------------------
+ 	 Sw36x36_Config_Date((unsigned int)SW36X36_Data_OUT[output][0],SW36X36_Data_IN[input][0]);
+	 Sw36x36_Config_Date((unsigned int)SW36X36_Data_OUT[output][1],SW36X36_Data_IN[input][1]);
+	 Sw36x36_Config_Date((unsigned int)SW36X36_Data_OUT[output][2],SW36X36_Data_IN[input][2]);
+	 Sw36x36_Config_Date((unsigned int)SW36X36_Data_OUT[output][3],SW36X36_Data_IN[input][3]);
+	 //-------------------------------------------------------------------------  
+	//SCLK_H;
+	SW_PIN_H(psw_info->scl);
+	//xCS_L;//
+	SW_PIN_L(psw_info->update);
+	//SCLK_L;
+	SW_PIN_L(psw_info->scl);
+
+}
+
+void SW36x36_Up_All_Data(unsigned char channels,unsigned char iMtxState[])
+{
+	unsigned char iNdx_I,iNdx_O;
+	printk("%s-01,channels=%d\n",__func__,channels);
+	////////////////////////////////////////////////////////////////////////////////	   
+	Sw36x36_Config_Date(0xCB,0x0);//bug   
+	for(iNdx_O=0;iNdx_O<channels;iNdx_O++)//iNdx_O=0;iNdx_O<MAX_OUTPUT_NUM;iNdx_O++
+ 	{
+ 		iNdx_I=iMtxState[iNdx_O];
+ 	   	Sw36x36_Config_Date((unsigned int)SW36X36_Data_OUT[iNdx_O][0],SW36X36_Data_IN[iNdx_I][0]);
+ 	   	Sw36x36_Config_Date((unsigned int)SW36X36_Data_OUT[iNdx_O][1],SW36X36_Data_IN[iNdx_I][1]);
+		Sw36x36_Config_Date((unsigned int)SW36X36_Data_OUT[iNdx_O][2],SW36X36_Data_IN[iNdx_I][2]);
+ 	   	Sw36x36_Config_Date((unsigned int)SW36X36_Data_OUT[iNdx_O][3],SW36X36_Data_IN[iNdx_I][3]);
+	}	   
+
+	//SCLK_H;
+	SW_PIN_H(psw_info->scl);
+	//xCS_L;//
+	SW_PIN_L(psw_info->update);
+	//SCLK_L;
+	SW_PIN_L(psw_info->scl);
+
+}
+
 
 
 int read_devicetype(void)
@@ -1037,6 +1424,18 @@ int GPIO_Init(void)
 		psw_info->iMtxState=kmalloc(psw_info->output_maxnum,GFP_KERNEL);
 
 	} 
+	else if(matrix_type==SV_10X10){
+		printk("init SV_10x10\n");
+		psw_info=&sw10x10_info;
+		psw_info->SW_Reset = reset_sw10x10;
+		psw_info->SW_I2C_Write = ADN460x_I2C_Write;
+		psw_info->SW_I2C_Read= ADN460x_I2C_Read;
+		psw_info->Up_Config_One_Data=SW10x10_Up_One_Data;
+		psw_info->Up_Config_All_Data=SW10x10_Up_All_Data;
+		psw_info->DCS_ALL_Init=SW10x10_DCS_ALL_Init;
+		psw_info->iMtxState=kmalloc(psw_info->output_maxnum,GFP_KERNEL);
+
+	} 
 	else if ((matrix_type==SV_20X20)) {
 		printk("init SV_20x20\n");
 		psw_info=&sw20x20_info;
@@ -1058,6 +1457,18 @@ int GPIO_Init(void)
 		psw_info->Up_Config_One_Data=SW16x16_Up_One_Data;
 		psw_info->Up_Config_All_Data=SW16x16_Up_All_Data;
 		psw_info->DCS_ALL_Init=SW16x16_DCS_ALL_Init;
+		psw_info->iMtxState=kmalloc(psw_info->output_maxnum,GFP_KERNEL);
+
+	}
+	else if ((matrix_type==SV_36X36)) {
+		printk("init SV_36X36\n");
+		psw_info=&sw36x36_info;
+		psw_info->SW_Reset = reset_sw36x36;
+		psw_info->SW_I2C_Write = ADN4605_I2C_Write;
+		psw_info->SW_I2C_Read= ADN4605_I2C_Read;
+		psw_info->Up_Config_One_Data=SW36x36_Up_One_Data;
+		psw_info->Up_Config_All_Data=SW36x36_Up_All_Data;
+		psw_info->DCS_ALL_Init=SW36x36_DCS_ALL_Init;
 		psw_info->iMtxState=kmalloc(psw_info->output_maxnum,GFP_KERNEL);
 
 	}
