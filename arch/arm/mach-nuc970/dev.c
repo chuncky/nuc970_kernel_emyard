@@ -359,7 +359,44 @@ static struct nuc970fb_display nuc970fb_lcd_info[] = {
 		.scale		= 0x04000400,
 	},
 #endif
-
+#ifdef CONFIG_AT070TN92_800X480
+	/* AT070TN92 800x480 TFT Panel , 24bits*/
+	[0] = {
+#ifdef CONFIG_FB_SRCFMT_RGB888
+		.type		= LCM_DCCS_VA_SRC_RGB888,
+		.bpp		= 32,
+#elif defined(CONFIG_FB_SRCFMT_RGB565)
+		.type   = LCM_DCCS_VA_SRC_RGB565,
+		.bpp		= 16,
+#endif
+		.width		= 800,
+		.height		= 480,
+		.xres		= 800,
+		.yres		= 480,
+		.pixclock	= 20000000,
+		.left_margin	= 88,
+		.right_margin   = 40,
+		.hsync_len		= 48,
+		.upper_margin	= 32,
+		.lower_margin	= 13,
+		.vsync_len		= 3,
+#ifdef CONFIG_FB_SRCFMT_RGB888
+		.dccs		= 0x0e00020a,
+        .fbctrl		= 0x03200320,
+#elif defined(CONFIG_FB_SRCFMT_RGB565)
+		.dccs		= 0x0e00040a,
+		.fbctrl		= 0x01900190,
+#endif
+#ifdef CONFIG_FB_LCD_16BIT_PIN
+        .devctl		= 0x050000c0,
+#elif defined(CONFIG_FB_LCD_18BIT_PIN)
+        .devctl		= 0x060000c0,
+#elif defined(CONFIG_FB_LCD_24BIT_PIN)
+        .devctl		= 0x070000c0,
+#endif
+		.scale		= 0x04000400,
+	},
+#endif
 #ifdef CONFIG_ILI9431_MPU80_240x320
 	/* ILI9431 240x320 MPU Panel , 16bits*/
 	[0] = {		
@@ -728,11 +765,33 @@ struct platform_device nuc970_device_audio_pcm = {
 #if defined(CONFIG_I2C_BUS_NUC970_P0) || defined(CONFIG_I2C_BUS_NUC970_P0_MODULE)
 // port 0
 /* I2C clients */
+
+#ifdef CONFIG_TOUCHSCREEN_FT5X06
+#include <linux/input/ft5x06_ts.h>
+static struct ft5x06_ts_platform_data ft5x06_ts_data = {
+	.reset_gpio	= NUC970_PG14,
+	.irq_gpio	= NUC970_PG13,
+};
+
+#endif
+
+
 static struct i2c_board_info __initdata nuc970_i2c_clients0[] =
 {
 #ifdef CONFIG_SND_SOC_NAU8822
 	{I2C_BOARD_INFO("nau8822", 0x1a),},
 #endif
+
+
+#ifdef CONFIG_TOUCHSCREEN_FT5X06
+	{
+		I2C_BOARD_INFO("ft5x06_ts", 0x38),
+		.platform_data = &ft5x06_ts_data,
+	},
+
+#endif
+
+
 };
 static struct resource nuc970_i2c0_resource[] = {
         [0] = {
