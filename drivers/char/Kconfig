@@ -625,5 +625,14 @@ config NUC970_DMA_PROXY
 
           If unsure, say Y.
 
+config DLP_VIDEO_SWITCH
+        bool "Support for /dev/video_switch"
+        default n
+        ---help---
+	  support for dlp video_switch
+
+          If unsure, say Y.
+
+
 endmenu
 
