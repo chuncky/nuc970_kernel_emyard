@@ -1414,6 +1414,19 @@ struct platform_device nuc970_device_pinctrl = {
 
 #if defined(CONFIG_GPIO_NUC970) || defined(CONFIG_GPIO_NUC970_MODULE)
 #if defined(CONFIG_I2C_ALGOBIT) || defined(CONFIG_I2C_ALGOBIT_MODULE)
+
+
+#ifdef CONFIG_TOUCHSCREEN_FT5X06
+#include <linux/input/ft5x06_ts.h>
+static struct ft5x06_ts_platform_data ft5x06_ts_data = {
+	.reset_gpio	= NUC970_PG14,
+	.irq_gpio	= NUC970_PG13,
+	.irqflags       = IRQF_TRIGGER_FALLING,
+};
+
+#endif
+
+
 static struct i2c_board_info __initdata nuc970_i2c_clients2[] =
 {
 #ifdef CONFIG_SENSOR_OV7725
@@ -1428,10 +1441,24 @@ static struct i2c_board_info __initdata nuc970_i2c_clients2[] =
 #ifdef CONFIG_SENSOR_NT99050
 	{I2C_BOARD_INFO("nt99050", 0x21),},
 #endif
+
+#ifdef CONFIG_TOUCHSCREEN_FT5X06
+	{
+		I2C_BOARD_INFO("ft5x06_ts", 0x38),
+		.platform_data = &ft5x06_ts_data,
+	},
+
+#endif
+
+
 };
 static struct i2c_gpio_platform_data i2c_gpio_adapter_data = {
-    .sda_pin = NUC970_PB1,
-    .scl_pin = NUC970_PB0,
+    //.sda_pin = NUC970_PB1,
+    //.scl_pin = NUC970_PB0,
+
+    .sda_pin = NUC970_PG0,
+    .scl_pin = NUC970_PG1,
+
     .udelay = 1,
     .timeout = 100,
     .sda_is_open_drain = 0,   //not support open drain mode
