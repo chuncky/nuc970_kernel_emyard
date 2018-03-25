@@ -36,7 +36,56 @@
 #define FT5X06_SUSPEND_LEVEL 1
 #endif
 
-#define CFG_MAX_TOUCH_POINTS	2
+enum ft5x0x_ts_regs {
+	FT5X0X_REG_THGROUP					= 0x80,     /* touch threshold, related to sensitivity */
+	FT5X0X_REG_THPEAK						= 0x81,
+	FT5X0X_REG_THCAL						= 0x82,
+	FT5X0X_REG_THWATER					= 0x83,
+	FT5X0X_REG_THTEMP					= 0x84,
+	FT5X0X_REG_THDIFF						= 0x85,				
+	FT5X0X_REG_CTRL						= 0x86,
+	FT5X0X_REG_TIMEENTERMONITOR			= 0x87,
+	FT5X0X_REG_PERIODACTIVE				= 0x88,      /* report rate */
+	FT5X0X_REG_PERIODMONITOR			= 0x89,
+	FT5X0X_REG_HEIGHT_B					= 0x8a,
+	FT5X0X_REG_MAX_FRAME					= 0x8b,
+	FT5X0X_REG_DIST_MOVE					= 0x8c,
+	FT5X0X_REG_DIST_POINT				= 0x8d,
+	FT5X0X_REG_FEG_FRAME					= 0x8e,
+	FT5X0X_REG_SINGLE_CLICK_OFFSET		= 0x8f,
+	FT5X0X_REG_DOUBLE_CLICK_TIME_MIN	= 0x90,
+	FT5X0X_REG_SINGLE_CLICK_TIME			= 0x91,
+	FT5X0X_REG_LEFT_RIGHT_OFFSET		= 0x92,
+	FT5X0X_REG_UP_DOWN_OFFSET			= 0x93,
+	FT5X0X_REG_DISTANCE_LEFT_RIGHT		= 0x94,
+	FT5X0X_REG_DISTANCE_UP_DOWN		= 0x95,
+	FT5X0X_REG_ZOOM_DIS_SQR				= 0x96,
+	FT5X0X_REG_RADIAN_VALUE				=0x97,
+	FT5X0X_REG_MAX_X_HIGH                       	= 0x98,
+	FT5X0X_REG_MAX_X_LOW             			= 0x99,
+	FT5X0X_REG_MAX_Y_HIGH            			= 0x9a,
+	FT5X0X_REG_MAX_Y_LOW             			= 0x9b,
+	FT5X0X_REG_K_X_HIGH            			= 0x9c,
+	FT5X0X_REG_K_X_LOW             			= 0x9d,
+	FT5X0X_REG_K_Y_HIGH            			= 0x9e,
+	FT5X0X_REG_K_Y_LOW             			= 0x9f,
+	FT5X0X_REG_AUTO_CLB_MODE			= 0xa0,
+	FT5X0X_REG_LIB_VERSION_H 				= 0xa1,
+	FT5X0X_REG_LIB_VERSION_L 				= 0xa2,		
+	FT5X0X_REG_CIPHER						= 0xa3,
+	FT5X0X_REG_MODE						= 0xa4,
+	FT5X0X_REG_PMODE						= 0xa5,	  /* Power Consume Mode		*/	
+	FT5X0X_REG_FIRMID						= 0xa6,   /* Firmware version */
+	FT5X0X_REG_STATE						= 0xa7,
+	FT5X0X_REG_FT5201ID					= 0xa8,
+	FT5X0X_REG_ERR						= 0xa9,
+	FT5X0X_REG_CLB						= 0xaa,
+};
+
+
+
+
+#define CFG_MAX_TOUCH_POINTS	1
 
 #define FT_STARTUP_DLY		250
 #define FT_RESET_DLY		20
@@ -260,6 +309,73 @@ static int ft5x06_i2c_write(const struct i2c_client *client, char *writebuf,
 
 	return ret;
 }
+
+
+/***********************************************************************************************
+Name	:	ft5x0x_read_reg 
+
+Input	:	addr
+                     pdata
+
+Output	:	
+
+function	:	read register of ft5x0x
+
+***********************************************************************************************/
+static int ft5x0x_read_reg(u8 addr, u8 *pdata)
+{
+	int ret;
+	u8 buf[2];
+	struct i2c_msg msgs[2];
+
+    //
+	buf[0] = addr;    //register address
+	
+	msgs[0].addr = this_client->addr;
+	msgs[0].flags = 0;
+	msgs[0].len = 1;
+	msgs[0].buf = buf;
+	msgs[1].addr = this_client->addr;
+	msgs[1].flags = I2C_M_RD;
+	msgs[1].len = 1;
+	msgs[1].buf = buf;
+
+	ret = i2c_transfer(this_client->adapter, msgs, 2);
+	if (ret < 0)
+		pr_err("msg %s i2c read error: %d\n", __func__, ret);
+
+	*pdata = buf[0];
+	return ret;
+  
+}
+
+
+/***********************************************************************************************
+Name	:	 ft5x0x_read_fw_ver
+
+Input	:	 void
+                     
+
+Output	:	 firmware version 	
+
+function	:	 read TP firmware version
+
+***********************************************************************************************/
+static unsigned char ft5x0x_read_fw_ver(void)
+{
+	unsigned char ver;
+	ft5x0x_read_reg(FT5X0X_REG_FIRMID, &ver);
+	return(ver);
+}
+
+
+
+
+
+
+
+
+
 
 #ifdef FIRMWARE_UPGRADE
 /***********************************************************************************************
@@ -779,43 +895,6 @@ static int ft5x06_read_Touchdata(struct ft5x06_ts_data *data)
 	int i = 0;
 	u8 pointid = FT_MAX_ID;
 	
-/*fgy add for tp_ps begin*/
-#ifdef  TP_PROXIMITY_SENSOR
-    char ps_data;
-    int err;
-	if(rgt_ps_mode==true)
-	{
-		//int err;
-		ps_data=0x00;
-		err=i2c_smbus_read_i2c_block_data(ps_i2c_client, FT_TOUCH_PS_ONOFF, 1, &ps_data);// 
-		if(err==1) {
-			printk("tp_ps: i2c read sucess,addr = %x,data =%x\n",ps_i2c_client->addr,ps_data);
-		} else {
-			printk("tp_ps: i2c read fail\n");
-                 }   
-		if (ps_data== 0) {    
-                     tp_ps_enable(1);
-                     rgt_ps_data = 1;                  
-		}
-		err=i2c_smbus_read_i2c_block_data(ps_i2c_client, FT_TOUCH_PS_STATUS, 1, &ps_data); // 
-		
-		if(ps_data==0xc0) {         // close
-		     rgt_ps_data=0;
-	             printk("tp_ps:near the TP:%x\n", ps_data);
-		} else if(ps_data==0xe0) {   //far away
-		     rgt_ps_data=1;
-                     printk("tp_ps:far away the TP:%x\n", ps_data);
-		}
-        }
-
-        if (rgt_ps_mode) {
-            tp_ps_report(ps_dev->ps_input_dev, rgt_ps_data);
-            printk("tp_ps: read_data report value: %d\n",rgt_ps_data);
-        }
-  
-#endif //TP_PROXIMITY_SENSOR
-/*fgy add for tp_ps end*/
-
 	ret = ft5x06_i2c_read(data->client, buf, 1, buf, POINT_READ_BUF);
 	if (ret < 0) {
 		dev_err(&data->client->dev, "%s read touchdata failed.\n",
@@ -865,18 +944,26 @@ static void ft5x06_report_value(struct ft5x06_ts_data *data)
 					 event->au16_x[i]);
 			input_report_abs(data->input_dev, ABS_MT_POSITION_Y,
 					 event->au16_y[i]);
+			input_report_abs(data->input_dev, ABS_X, event->au16_x[i]);
+			input_report_abs(data->input_dev, ABS_Y, event->au16_y[i]);
+
 			if (event->au8_touch_event[i] == FTS_POINT_DOWN
 			    || event->au8_touch_event[i] == FTS_POINT_CONTACT){
 				input_report_abs(data->input_dev,
 						 ABS_MT_TOUCH_MAJOR,
 						 event->pressure);
+				input_report_key(data->input_dev, BTN_TOUCH, 1);
+				input_report_abs(data->input_dev, ABS_PRESSURE, event->pressure);
+
 			}
 			else {
 				input_report_abs(data->input_dev,
 						 ABS_MT_TOUCH_MAJOR, 0);
+				input_report_key(data->input_dev, BTN_TOUCH, 0);
+				input_report_abs(data->input_dev, ABS_PRESSURE, 0);
 				up_point++;
 			}
-//			printk(KERN_ERR"p = %d,x = %d,y = %d \n",i,event->au16_x[i],event->au16_y[i]);
+			//printk(KERN_ERR"p = %d,x = %d,y = %d \n",i,event->au16_x[i],event->au16_y[i]);
 			input_mt_sync(data->input_dev);
 	}
 	input_sync(data->input_dev);
@@ -902,14 +989,6 @@ static irqreturn_t ft5x06_ts_interrupt(int irq, void *dev_id)
 
 	struct ft5x06_ts_data *ft5x06_ts = dev_id;
 	disable_irq_nosync(ft5x06_ts->client -> irq);
-/*fgy add for tp_ps begin*/
-#ifdef  TP_PROXIMITY_SENSOR	
-    if (rgt_ps_mode) {
-	 wake_lock_timeout(&psensor_wake_lock,2*HZ);//prevent app sleep too quickly and lost driver's info
-    }
-#endif
-/*fgy add for tp_ps end*/
-
 	schedule_work(&ft5x06_ts ->ft5x06_wq);
 
 	return IRQ_HANDLED;
@@ -1299,6 +1378,7 @@ static int ft5x06_ts_probe(struct i2c_client *client,
 	u8 reg_addr;
 	int err;
 	int tries;
+	unsigned char uc_reg_value; 
 
 	
 	if (!pdata) {
@@ -1328,7 +1408,6 @@ static int ft5x06_ts_probe(struct i2c_client *client,
 	data->input_dev = input_dev;
 	data->client = client;
 	data->pdata = pdata;
-
 	input_dev->name = "ft5x06_ts";
 	input_dev->id.bustype = BUS_I2C;
 	input_dev->dev.parent = &client->dev;
@@ -1347,12 +1426,23 @@ static int ft5x06_ts_probe(struct i2c_client *client,
 	set_bit(KEY_BACK, input_dev->keybit);
 	set_bit(KEY_MENU, input_dev->keybit);
 	set_bit(KEY_HOME, input_dev->keybit);
+	set_bit(BTN_TOUCH, input_dev->keybit);
 
+
+	printk("pdata->x_max=%d,pdata->y_max=%d\n",pdata->x_max,pdata->y_max);
 	input_set_abs_params(input_dev, ABS_MT_POSITION_X, 0,
 			     pdata->x_max, 0, 0);
 	input_set_abs_params(input_dev, ABS_MT_POSITION_Y, 0,
 			     pdata->y_max, 0, 0);
 	input_set_abs_params(input_dev, ABS_MT_TOUCH_MAJOR, 0, FT_PRESS, 0, 0);
+
+
+    	input_set_abs_params(input_dev, ABS_X, 0, 
+				pdata->x_max, 0, 0);
+    	input_set_abs_params(input_dev, ABS_Y, 0, 
+				pdata->y_max, 0, 0);
+    	input_set_abs_params(input_dev, ABS_PRESSURE, 0, FT_PRESS, 0, 0);
+
 
 	err = input_register_device(input_dev);
 	if (err) {
@@ -1403,17 +1493,17 @@ static int ft5x06_ts_probe(struct i2c_client *client,
 	msleep(FT_STARTUP_DLY);
 
 	/*get some register information */
+
+    uc_reg_value = ft5x0x_read_fw_ver();
+    printk("[FTS] Firmware version = 0x%x\n", uc_reg_value);
+    ft5x0x_read_reg(FT5X0X_REG_PERIODACTIVE, &uc_reg_value);
+    printk("[FTS] report rate is %dHz.\n", uc_reg_value * 10);
+    ft5x0x_read_reg(FT5X0X_REG_THGROUP, &uc_reg_value);
+    printk("[FTS] touch threshold is %d.\n", uc_reg_value * 4);
+
 	/* read firmware version */
 	reg_addr = FT5X06_REG_IC_TYPE;
-
-
-
-
-	//err=i2c_smbus_read_byte_data(client,reg_addr);
-	char mode;
-	mode=i2c_smbus_read_byte_data(client,0);
 	tries = FT_NUM_RETRY;
-	printk("client->addr=0x%x,mode=0x%x\n",client->addr,mode);
 	do {
 		err = ft5x06_i2c_read(client, &reg_addr, 1, &reg_value, 1);
 		msleep(FT_DELAY_DFLT);
@@ -1424,23 +1514,27 @@ static int ft5x06_ts_probe(struct i2c_client *client,
 		goto free_reset_gpio;
 	}
 	dev_info(&client->dev, "lxh: ft6306 probe ok with chip_id 0x%x_20130902_2\n", reg_value);
-	
+	client->irq=gpio_to_irq(pdata->irq_gpio);
+
+	printk("irq_gpio=0x%x,client->irq=%d\n",pdata->irq_gpio,client->irq);
 
 #ifdef FIRMWARE_UPGRADE
      fts_ctpm_auto_upg(client);	
 #endif
 
 	/* Requesting irq */
-	err = request_threaded_irq(client->irq, NULL,
-				   ft5x06_ts_interrupt, pdata->irqflags,
+	INIT_WORK(&data -> ft5x06_wq, ft5x06_data_disposal);
+
+	err = request_irq(client->irq, ft5x06_ts_interrupt, pdata->irqflags,
 				   client->dev.driver->name, data);
+
 	if (err) {
 		dev_err(&client->dev, "request irq failed\n");
 		goto free_reset_gpio;
 	} else {
                 printk("lxh:**request irq ok**\n");   
         }
-	INIT_WORK(&data -> ft5x06_wq, ft5x06_data_disposal);
+	
 
 #ifdef TIMER_READ_OPERATION
  	INIT_DELAYED_WORK(&timer_read_workqueue, tp_timer_read_work);	
