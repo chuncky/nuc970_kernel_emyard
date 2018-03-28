@@ -21,6 +21,9 @@
 #include <asm/bootinfo.h>
 #endif
 
+extern const struct linux_logo logo_dgyt_clut224;
+
+
 static bool nologo;
 module_param(nologo, bool, 0);
 MODULE_PARM_DESC(nologo, "Disables startup logo");
@@ -82,6 +85,12 @@ const struct linux_logo * __init_refok fb_find_logo(int depth)
 		/* Generic Linux logo */
 		logo = &logo_linux_clut224;
 #endif
+
+#ifdef CONFIG_LOGO_DGYT_CLUT224
+		/* Dgyt Linux logo */
+		logo = &logo_dgyt_clut224;
+#endif
+
 #ifdef CONFIG_LOGO_BLACKFIN_CLUT224
 		/* Blackfin Linux logo */
 		logo = &logo_blackfin_clut224;
