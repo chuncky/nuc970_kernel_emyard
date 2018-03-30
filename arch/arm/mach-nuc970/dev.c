@@ -421,12 +421,34 @@ static struct nuc970fb_display nuc970fb_lcd_info[] = {
 #endif
 };
 
+int fb_init(struct platform_device *dev)
+{
+	//set mfp for blen and lcs
+#if defined(CONFIG_BOARD_NUC977)		
+	writel(readl(REG_MFP_GPB_L)&0xffff00ff,REG_MFP_GPB_L);//gpb2-3
+#endif 
+
+	return 0;
+}
+
+
+
 static struct nuc970fb_mach_info nuc970fb_fb_info = {
 	.displays		= &nuc970fb_lcd_info[0],
 	.num_displays		= ARRAY_SIZE(nuc970fb_lcd_info),
 	.default_display	= 0,
+#if defined(CONFIG_BOARD_NUC972)	
     .gpio_blen          = NUC970_PG3,
     .gpio_lcs           = NUC970_PG2,
+#endif 
+
+#if defined(CONFIG_BOARD_NUC977)	
+    .gpio_blen          = NUC970_PB3,
+    .gpio_lcs           = NUC970_PB2,
+    .init=fb_init,
+     
+#endif 
+ 
 };
 
 static struct resource nuc970fb_lcd_resource[] = {
@@ -1571,9 +1593,9 @@ static struct platform_device iio_gpio_trigger = {
 #if defined(CONFIG_BACKLIGHT_PWM)
 static struct platform_pwm_backlight_data nuc970_backlight_data = {
 	.pwm_id		= 0,
-	.max_brightness	= 1,
-	.dft_brightness	= 1,
-	.pwm_period_ns	= 78000,
+	.max_brightness	= 1000,
+	.dft_brightness	= 10,
+	.pwm_period_ns	= 780000,
 };
 
 struct platform_device nuc970_pwm_bl = {

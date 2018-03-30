@@ -72,8 +72,12 @@ struct nuc970fb_mach_info {
 	unsigned int num_displays;
 	unsigned int default_display;
 	/* GPIO Setting  Info */
-    unsigned int gpio_blen;
-    unsigned int gpio_lcs;
+  unsigned int gpio_blen;
+  unsigned int gpio_lcs;
+	int (*init)(struct platform_device *);
+	void (*exit)(struct platform_device *);    
+  void (*lcd_power)(int);
+	void (*backlight_power)(int);
 };
 
 extern void __init nuc970_fb_set_platdata(struct nuc970fb_mach_info *);
