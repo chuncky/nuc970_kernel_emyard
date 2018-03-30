@@ -45,6 +45,28 @@
 
 #include "nuc970fb.h"
 
+static void nuc970fb_dump_reg(struct nuc970fb_info *fbi)
+{
+	void __iomem *regs = fbi->io;
+	
+	dev_dbg(fbi->dev, "lcd register dump:\n");
+	dev_dbg(fbi->dev, "dccs       = 0x%08x\n", readl(regs+REG_LCM_DCCS));
+	dev_dbg(fbi->dev, "dev_ctl    = 0x%08x\n", readl(regs + REG_LCM_DEV_CTRL));
+	dev_dbg(fbi->dev, "crtc_size  = 0x%08x\n", readl(regs + REG_LCM_CRTC_SIZE));
+	dev_dbg(fbi->dev, "crtc_dend  = 0x%08x\n", readl(regs + REG_LCM_CRTC_DEND));
+	dev_dbg(fbi->dev, "crtc_hr    = 0x%08x\n", readl(regs + REG_LCM_CRTC_HR));
+	dev_dbg(fbi->dev, "crtc_hsync = 0x%08x\n", readl(regs + REG_LCM_CRTC_HSYNC));
+	dev_dbg(fbi->dev, "crtc_vr    = 0x%08x\n", readl(regs + REG_LCM_CRTC_VR));
+	
+	
+		dev_dbg(fbi->dev, "REG_LCM_VA_BADDR0    = 0x%08x\n", readl(regs + REG_LCM_VA_BADDR0));
+		dev_dbg(fbi->dev, "REG_LCM_VA_BADDR1    = 0x%08x\n", readl(regs + REG_LCM_VA_BADDR1));
+		dev_dbg(fbi->dev, "REG_LCM_VA_FBCTRL    = 0x%08x\n", readl(regs + REG_LCM_VA_FBCTRL));
+		dev_dbg(fbi->dev, "REG_LCM_VA_SCALE    = 0x%08x\n", readl(regs + REG_LCM_VA_SCALE));
+
+	
+}
+
 #ifdef CONFIG_ILI9431_MPU80_240x320
 void nuc970_mpu_write_cmd(struct fb_info *info, unsigned short uscmd)
 {
@@ -454,13 +476,95 @@ static int nuc970fb_setcolreg(unsigned regno,
 	return 0;
 }
 
+static void nuc970fb_enable_controller(struct nuc970fb_info *fbi)
+{
+	void __iomem *regs = fbi->io;
+	struct fb_info *fbinfo;
+	struct nuc970fb_mach_info *mach_info;
+	mach_info=fbi->mach_info;
+	fbinfo=fbi->info;
+	
+	if (fbi->enabled)
+		return;
+	pr_debug("Enabling LCD controller\n");	
+	clk_prepare_enable(fbi->clk);
+
+	//writel(readl(fbi->io + REG_LCM_DCCS) | LCM_DCCS_DISP_INT_EN, fbi->io + REG_LCM_DCCS);
+	//writel(readl(regs + REG_LCM_DCCS) | LCM_DCCS_VA_EN ,regs + REG_LCM_DCCS);		
+
+	fbi->enabled = true;
+	
+	if (fbi->backlight_power)
+		fbi->backlight_power(1);
+	if (fbi->lcd_power)
+		fbi->lcd_power(1);
+	
+	gpio_direction_output(mach_info->gpio_blen,1);
+	//nuc970fb_dump_reg(fbi);	
+	
+#if 0
+	pr_debug("Enabling LCD controller\n");
+
+	writel(fbi->screen_dma, fbi->regs + LCDC_SSA);
+
+	/* panning offset 0 (0 pixel offset)        */
+	writel(0x00000000, fbi->regs + LCDC_POS);
+
+	/* disable hardware cursor */
+	writel(readl(fbi->regs + LCDC_CPOS) & ~(CPOS_CC0 | CPOS_CC1),
+		fbi->regs + LCDC_CPOS);
+
+#endif 
+}
+
+static void nuc970fb_disable_controller(struct nuc970fb_info *fbi)
+{
+	struct nuc970fb_mach_info *mach_info;
+	void __iomem *regs = fbi->io;
+
+	mach_info=fbi->mach_info;
+	
+	pr_debug("Disabling LCD controller\n");
+	
+	if (!fbi->enabled)
+		return;
+		
+	//nuc970fb_dump_reg(fbi);		
+	if (fbi->backlight_power)
+		fbi->backlight_power(0);
+	if (fbi->lcd_power)
+		fbi->lcd_power(0);
+	
+	gpio_direction_output(mach_info->gpio_blen,0);
+	
+	//writel(readl(regs + REG_LCM_DCCS)&(~LCM_DCCS_VA_EN),regs + REG_LCM_DCCS);	
+	clk_disable_unprepare(fbi->clk);	
+	fbi->enabled = false;
+
+}
+
 /**
  *      nuc970fb_blank
  *
  */
 static int nuc970fb_blank(int blank_mode, struct fb_info *info)
 {
+	struct nuc970fb_info *fbi = info->par;
+	
+	pr_debug("nuc970fb_blank: blank_mode=%d\n", blank_mode);
 
+	switch (blank_mode) {
+	case FB_BLANK_POWERDOWN:
+	case FB_BLANK_VSYNC_SUSPEND:
+	case FB_BLANK_HSYNC_SUSPEND:
+	case FB_BLANK_NORMAL:
+		nuc970fb_disable_controller(fbi);
+		break;
+
+	case FB_BLANK_UNBLANK:
+		nuc970fb_enable_controller(fbi);
+		break;
+	}
 	return 0;
 }
 
@@ -860,6 +964,7 @@ static int nuc970fb_probe(struct platform_device *pdev)
 	platform_set_drvdata(pdev, fbinfo);
 
 	fbi = fbinfo->par;
+	fbi->info = fbinfo;
 	fbi->dev = &pdev->dev;
 	fbi->mach_info = mach_info;
 
@@ -970,6 +1075,30 @@ static int nuc970fb_probe(struct platform_device *pdev)
 	fbinfo->var.xres = display->xres;
 	fbinfo->var.yres = display->yres;
 	fbinfo->var.bits_per_pixel = display->bpp;
+	
+	fbi->lcd_power			= mach_info->lcd_power;
+	fbi->backlight_power		= mach_info->backlight_power;
+
+	if (mach_info->init) {
+		ret = mach_info->init(fbi->pdev);
+		if (ret<0)
+			goto free_video_memory;
+	}
+
+	ret = gpio_request(mach_info->gpio_lcs , "LCD_CS ");
+	if (ret) {
+      printk("LCD_CS  failed ret=%d\n",ret);
+      goto free_video_memory;
+	}
+	gpio_direction_output(mach_info->gpio_lcs,1);
+
+	ret = gpio_request(mach_info->gpio_blen , "BLEN ");
+	if (ret) {
+      printk("BLEN  failed ret=%d\n",ret);
+      goto free_video_memory;
+	}
+	gpio_direction_output(mach_info->gpio_blen,1);
+
 
 	nuc970fb_init_registers(fbinfo);
 
@@ -980,13 +1109,22 @@ static int nuc970fb_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "Failed to register cpufreq\n");
 		goto free_video_memory;
 	}
-
+	
+	nuc970fb_set_par(fbinfo);
+	
 	ret = register_framebuffer(fbinfo);
 	if (ret) {
 		printk(KERN_ERR "failed to register framebuffer device: %d\n",
 			ret);
 		goto free_cpufreq;
 	}
+#if !defined(CONFIG_FRAMEBUFFER_CONSOLE) && defined(CONFIG_LOGO)
+			if (fb_prepare_logo(fbinfo, FB_ROTATE_UR)) {
+				/* Start display and show logo on boot */
+				fb_set_cmap(&fbinfo->cmap, fbinfo);
+				fb_show_logo(fbinfo, FB_ROTATE_UR);
+			}
+#endif	
 	
 #if defined(CONFIG_OF)
 	p = devm_pinctrl_get_select_default(&pdev->dev);
@@ -1014,9 +1152,11 @@ static int nuc970fb_probe(struct platform_device *pdev)
 	writel(readl(fbi->io + REG_LCM_DCCS) | LCM_DCCS_DISP_INT_EN, fbi->io + REG_LCM_DCCS);
 	writel(readl(fbi->io +  REG_LCM_INT_CS) | LCM_INT_CS_DISP_F_EN, fbi->io + REG_LCM_INT_CS);
 #endif
+
+	nuc970fb_enable_controller(fbi);
 	
 	return 0;
-
+	
 free_cpufreq:
 	nuc970fb_cpufreq_deregister(fbi);
 free_video_memory:
