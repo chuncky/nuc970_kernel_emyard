@@ -205,16 +205,21 @@ receive_chars(struct uart_nuc970_port *up)
 	unsigned int fsr;
 	int max_count = 256;
 	char flag;
-
+	if(up->port.line==1){
+	printk("%s-01:up->port.icount.parity=%d\n",__func__,up->port.icount.parity);
+	}
 	do {
                 if(serial_in(up, UART_REG_FSR) & (1 << 14)) break;
-
-		fsr = serial_in(up, UART_REG_FSR);
-                ch = (unsigned char)serial_in(up, UART_REG_RBR);
+    fsr = serial_in(up, UART_REG_FSR); 
 		flag = TTY_NORMAL;
 		up->port.icount.rx++;
-
+		if(up->port.line==1){
+					printk("%s-02\n",__func__);
+		}
 		if (unlikely(fsr & (BIF | FEF | PEF | RX_OVER_IF))) {
+				if(up->port.line==1){
+					printk("%s-03\n",__func__);
+				}
 			if (fsr & BIF) {
 				serial_out(up, UART_REG_FSR, BIF);
 				up->port.icount.brk++;
@@ -231,7 +236,9 @@ receive_chars(struct uart_nuc970_port *up)
 				serial_out(up, UART_REG_FSR, PEF);
                                 up->port.icount.parity++;
 			}
-
+	if(up->port.line==1){
+	printk("%s-04:up->port.icount.parity=%d\n",__func__,up->port.icount.parity);
+	}
 			if (fsr & RX_OVER_IF) {
 				serial_out(up, UART_REG_FSR, RX_OVER_IF);
 				up->port.icount.overrun++;
@@ -244,7 +251,7 @@ receive_chars(struct uart_nuc970_port *up)
 			if (fsr & FEF)
 				flag = TTY_FRAME;
 		}
-
+    ch = (unsigned char)serial_in(up, UART_REG_RBR);
 		if (uart_handle_sysrq_char(&up->port, ch))
 			continue;
 
@@ -822,13 +829,15 @@ static int __init nuc970serial_console_setup(struct console *co, char *options)
 	if (co->index >= UART_NR)
 		co->index = 0;
 	port = &nuc970serial_ports[co->index].port;
-
+	printk("%s-01,port->line=%d\n",__func__,port->line);
 	if (!port->iobase && !port->membase)
 		return -ENODEV;
 
 	if (options)
 		uart_parse_options(options, &baud, &parity, &bits, &flow);
-
+	if(port->line==1){	
+		printk("%s-02:up->port.icount.parity=%d\n",__func__,port->icount.parity);
+	}
 	return uart_set_options(port, co, baud, parity, bits, flow);
 }
 
