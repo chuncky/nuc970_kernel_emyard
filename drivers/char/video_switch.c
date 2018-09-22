@@ -786,7 +786,7 @@ void SW20x20_Up_All_Data(unsigned char channels, unsigned char iMtxState[])
 
 
 	unsigned char iNdx_O = 0,iNdx_I = 0,value = iMtxState[0];
-	printk("%s:channels=%d:\n",__func__,channels);	
+//	printk("%s:channels=%d:\n",__func__,channels);	
 // 	  
 		for(iNdx_O=0;iNdx_O<channels;iNdx_O++)
 		{
@@ -808,12 +808,12 @@ void SW20x20_Up_All_Data(unsigned char channels, unsigned char iMtxState[])
 void SW20x20_DCS_ALL_Init(void)
 {
 		int i = 0;
-printk("%s-01\n",__func__);
+//printk("%s-01\n",__func__);
  		reset_adn4605();
 //  	  ADN4605_I2C_Write(0xC0,0xBA);
 	  ADN4605_I2C_Write(ADN4605_CHIP_1_I2C_ADDR,0x00,0x02);
 		ADN4605_I2C_Write(ADN4605_CHIP_2_I2C_ADDR,0x00,0x02);
-printk("%s-02\n",__func__);
+//printk("%s-02\n",__func__);
 	for(i=0;i<11;i++)
 	{
     ADN4605_I2C_Write(ADN4605_CHIP_1_I2C_ADDR,0xff,0xC0+i);
@@ -831,7 +831,7 @@ printk("%s-02\n",__func__);
 	{
     ADN4605_I2C_Write(ADN4605_CHIP_2_I2C_ADDR,0xff,0xb0+i);
 	}
-printk("%s-03\n",__func__);
+//printk("%s-03\n",__func__);
 }
 
 void SW8x8_DCS_ALL_Init(void)
@@ -860,7 +860,7 @@ void SW8x8_DCS_ALL_Init(void)
 
 void SW8x8_Up_One_Data(unsigned char output,unsigned char input)
 {
-	printk("%s:input %d to output %d\n",__func__,input,output);
+	//printk("%s:input %d to output %d\n",__func__,input,output);
 	
 	 // ADN460x_I2C_Write(ADN460x_CHIP_1_I2C_ADDR,0x00,0x81);	
 	
@@ -883,15 +883,15 @@ void SW8x8_Up_All_Data(unsigned char channels,unsigned char iMtxState[])
     unsigned char iNdx_O = 0,iNdx_I = 0;
 
 
-printk("%s:channels=%d:\n",__func__,channels);	
+//printk("%s:channels=%d:\n",__func__,channels);	
 		for(iNdx_O=0;iNdx_O<channels;iNdx_O++)
 		{
-printk("%4d;",iMtxState[iNdx_O]);	
+//printk("%4d;",iMtxState[iNdx_O]);	
 				iNdx_I=iMtxState[iNdx_O];
 				ADN460x_I2C_Write(ADN460x_CHIP_1_I2C_ADDR,(SW8X8_Data_IN[iNdx_I][0] << 4) | SW8X8_Data_IN[iNdx_I][2],SW8X8_XPT_MP0[SW8X8_Data_OUT[iNdx_O][0] >> 1]); 
 				ADN460x_I2C_Write(ADN460x_CHIP_2_I2C_ADDR,(SW8X8_Data_IN[iNdx_I][1] << 4) | SW8X8_Data_IN[iNdx_I][3],SW8X8_XPT_MP0[SW8X8_Data_OUT[iNdx_O][1] >> 1]);			
 		}
-printk("\n");		 
+//printk("\n");		 
 // 	  ADN460x_I2C_Write(ADN460x_CHIP_1_I2C_ADDR,0x01,0x80);
 // 		ADN460x_I2C_Write(ADN460x_CHIP_2_I2C_ADDR,0x01,0x80);
 		//ADN460x_UPDATE_L;
@@ -979,7 +979,7 @@ void SW10x10_DCS_ALL_Init(void)
 
 void SW10x10_Up_One_Data(unsigned char output,unsigned char input)
 {
-	printk("%s:input %d to output %d\n",__func__,input,output);
+	//printk("%s:input %d to output %d\n",__func__,input,output);
 	
 	
 	//ADN4605_I2C_Write(Data_IN[input][0],XPT_MP0[Data_OUT[output][0]]);
@@ -1111,7 +1111,7 @@ void SW16x16_Up_One_Data(unsigned char output,unsigned char input)
 
 	  unsigned char data[4]={0};
 	//unsigned char i = 0;
-printk("%s:input %d to output %d\n",__func__,input,output);
+//printk("%s:input %d to output %d\n",__func__,input,output);
 
 	data[0] = ADN460x_I2C_Read(SW16x16_CHIP_I2C_ADDR[0],xpt_status[SW16X16_Data_OUT[output][0]>>1]);
 	data[1] = ADN460x_I2C_Read(SW16x16_CHIP_I2C_ADDR[1],xpt_status[SW16X16_Data_OUT[output][1]>>1]);
@@ -1141,7 +1141,7 @@ void SW16x16_Up_All_Data_poweron(unsigned char channels,unsigned char iMtxState[
 
 	unsigned char dataout,temp1,temp2,datain;
 
-printk("%s-01,channels=%d\n",__func__,channels);
+//printk("%s-01,channels=%d\n",__func__,channels);
 		for(iNdx_O=0;iNdx_O<channels;iNdx_O+=2)
 		{
 
@@ -1528,8 +1528,8 @@ long video_switch_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 	devicetype = (int __user *)arg;
 	
 
-	printk("video_switch_ioctl(cmd=0x%x), value=0x%lu\n",
-		cmd, arg);
+	//printk("video_switch_ioctl(cmd=0x%x), value=0x%lu\n",
+	//	cmd, arg);
 	
 	switch(cmd)
 	{
@@ -1548,7 +1548,7 @@ long video_switch_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 			break;
 
 		case VIDEO_SWITCH_SETALLCHANNEL:
-			printk("%s-02\n",__func__);
+			//printk("%s-02\n",__func__);
 			matrix=(unsigned char __user *)arg;
 			copy_from_user(iMtxState, matrix,
 					channels);
